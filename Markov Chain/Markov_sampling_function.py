@@ -4,17 +4,17 @@ import random
 
 #define initial transition probability matrix
 p = np.array([[0.7,0.7,0.7,0.7],[0.1,0.1,0.1,0.1],[0.1,0.1,0.1,0.1],[0.1,0.1,0.1,0.1]])
-rows, columns = p.shape
-
-#define noise distribution matrix
-noise_ini = np.random.normal(0,0.01,(rows-1,columns))
-ncol_sum = noise_ini.sum(axis=0)*(-1)
-
-noise = np.append(noise_ini,[ncol_sum],axis= 0)
 
 #columns are froms (current state), rows are tos (next state)
 
-def sample(n,m,p,noise): #num of states, num of observations, probability of transition, noise
+def sample(n,m,p,nd): #num of states, num of observations, probability of transition, noise standard deviation
+    
+    rows, columns = p.shape
+    #define noise distribution matrix
+    noise_ini = np.random.normal(0,nd,(rows-1,columns))
+    ncol_sum = noise_ini.sum(axis=0)*(-1)
+    noise = np.append(noise_ini,[ncol_sum],axis= 0)
+    
     current_state = random.randrange(n) #randomly choosing the current state
     
     z = np.zeros((n,n))
@@ -35,4 +35,4 @@ def sample(n,m,p,noise): #num of states, num of observations, probability of tra
     z /= zcol_sum #generating probability matrix
     return z
 
-print(sample(4,1000,p,noise))
+print(sample(4,1000,p,0.01))
