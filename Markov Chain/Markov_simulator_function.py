@@ -9,4 +9,4 @@ def simulator(n,num): #number of states, number of samples
     
     return x
  
- print(simulator(4,20))
+#  print(simulator(4,20))
