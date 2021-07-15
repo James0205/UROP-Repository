@@ -36,4 +36,4 @@ def markov(n,m,p,noise): #num of states, num of observations, probability of tra
     z /= zcol_sum #generating probability matrix
     return z
 
-print(markov(4,1000,p,noise))
+# print(markov(4,1000,p,noise))
