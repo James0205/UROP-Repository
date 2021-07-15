@@ -3,7 +3,7 @@ import numpy as np
 import random
 
 #define initial transition probability matrix
-p = np.array([[0.1,0.4,0.3,0.2],[0.4,0.2,0.2,0.2],[0.3,0.2,0.2,0.3],[0.2,0.2,0.3,0.3]])
+p = np.array([[0.7,0.7,0.7,0.7],[0.1,0.1,0.1,0.1],[0.1,0.1,0.1,0.1],[0.1,0.1,0.1,0.1]])
 rows, columns = p.shape
 
 #define noise distribution matrix
@@ -14,14 +14,13 @@ noise = np.append(noise_ini,[ncol_sum],axis= 0)
 
 #columns are froms (current state), rows are tos (next state)
 
-def markov(n,m,p,noise):                            #num of states, num of observations, probability of transition, noise
-    state_space = list(string.ascii_uppercase[:n])  #creating a list of random state_space
-    current_state = random.randrange(n)             #randomly choosing the current state
+def sample(n,m,p,noise): #num of states, num of observations, probability of transition, noise
+    current_state = random.randrange(n) #randomly choosing the current state
     
     z = np.zeros((n,n))
     
-    p_fin = np.clip(p+noise,0,2)            #clipping negative values to 0
-    p_fin /= p_fin.sum(axis=0,keepdims=1)   #this should give p of col sum 1
+    p_fin = np.clip(p+noise,0,2) #clipping negative values to 0
+    p_fin /= p_fin.sum(axis=0,keepdims=1) #this should give p of col sum 1
     
     for i in range(m):
         transition = np.random.choice(list(range(n)), replace = True, p = p_fin[:,n-1])
@@ -36,4 +35,4 @@ def markov(n,m,p,noise):                            #num of states, num of obser
     z /= zcol_sum #generating probability matrix
     return z
 
-# print(markov(4,1000,p,noise))
+print(sample(4,1000,p,noise))
