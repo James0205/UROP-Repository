@@ -31,7 +31,7 @@ def alternative_sample(states_num: int = 4,
     noise = rng.normal(0,noise_scale,(states_num,states_num))
     sample_prob = transition_prob + noise
     negative_noise = sample_prob.min(axis=0)
-    sample_prob = sample_prob + (negative_noise>0)*np.sign(negative_noise)*negative_noise
+    sample_prob = sample_prob + (negative_noise<0)*np.sign(negative_noise)*negative_noise
     sample_prob = sample_prob/sample_prob.sum(axis=0)
     return sample_prob
 
