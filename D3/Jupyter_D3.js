@@ -1,5 +1,4 @@
 //codes to run D3 animation in Jupyter
-
 %%javascript
 require.config({
     paths: { 
@@ -195,13 +194,13 @@ $.getJSON("data.json", function(json) {
                   text
                     .transition()
                     .duration(800)
-                    .attr('fill','green')
+                    .attr('fill','rgb(100,150,150)')
                     .attr('font-size',30)
                     .transition()
                     .duration(800)
                     .delay(400)
                     .attr('font-size',20)
-                    .attr('fill','palegreen')
+                    .attr('fill','rgb(150,200,200)')
                   currentState = nextState;
                 };
             };
