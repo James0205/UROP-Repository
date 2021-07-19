@@ -27,6 +27,7 @@ $.getJSON("data.json", function(json) {
                     .attr("id", "blur")
                     .append("feGaussianBlur")
                     .attr("stdDeviation", 2); 
+                
                 var timeCircle = svg.append("circle")
                     .attr("r", 40);
                 
@@ -45,25 +46,34 @@ $.getJSON("data.json", function(json) {
                     .attr("font-size",0)
                     .attr("font-weight",500)
                     .attr('text-anchor','middle')
+                
                 var text = svg.append("text")
                     .attr('x',650)
-                    .attr('y',100)
+                    .attr('y',150)
                     .attr('font-size', 20)
                     .attr("font-weight",500)
                     .attr('text-anchor','middle')
                     .text("TO")
+                
+                var title = svg.append("text")
+                    .attr("font-weight",500)
+                    .attr('x',100)
+                    .attr('y',50)
+                    .attr('font-size', 30)
+                    .text("Markov Chain Dynamic Visualisation")
+
                 
                 var g = svg.selectAll('.someClass')
                     .data(data)
                     .enter()
                     .append("g")
                     .attr("transform", function(d,i) {
-                      return "translate(" + (300+ 200*Math.cos(i*2*pi/m)) + "," + (200*Math.sin(i*2*pi/m)+250) + ")";
+                      return "translate(" + (340+ 200*Math.cos(i*2*pi/m)) + "," + (200*Math.sin(i*2*pi/m)+360) + ")";
                     });
         
                     g.append("circle")
-                      .attr("cx", 40)
-                      .attr("cy", 10)
+                      .attr("cx", 0)
+                      .attr("cy", 0)
                       .attr("r",30)
                       .style("fill", function(d,i){
                 var num = (i+1)*255/m
@@ -72,8 +82,8 @@ $.getJSON("data.json", function(json) {
         
                     g.append("text")
                       .style("fill", "white")
-                      .attr("x",40)
-                      .attr("y",17.5)
+                      .attr("x",0)
+                      .attr("y",7)
                       .attr("text-anchor","middle")
                       .attr("font-size",20)
                       .attr("font-weight",500)
@@ -95,9 +105,9 @@ $.getJSON("data.json", function(json) {
                         }
                     }
                     var cx_current =340+200*Math.cos(currentState*2*pi/m)
-                    var cy_current =260+200*Math.sin(currentState*2*pi/m)
+                    var cy_current =360+200*Math.sin(currentState*2*pi/m)
                     var cx_next =340+200*Math.cos(nextState*2*pi/m)
-                    var cy_next = 260+200*Math.sin(nextState*2*pi/m)
+                    var cy_next = 360+200*Math.sin(nextState*2*pi/m)
                   timeCircle
                     .style("opacity",0.5)
                     .attr("fill", "yellow")
@@ -111,7 +121,7 @@ $.getJSON("data.json", function(json) {
                     .attr("fill", "orange")
                     .style("opacity",1.0)
                     .attr('cx', 340)     // move the circle to 920 on the x axis
-                    .attr('cy',260)     // position the circle at 250 on the y axis
+                    .attr('cy',360)     // position the circle at 250 on the y axis
                     .transition()        // apply a transition
                     .duration(1000)      // apply it over 2000 milliseconds
                     .attr("fill", "yellow")
@@ -161,7 +171,7 @@ $.getJSON("data.json", function(json) {
                     
                   movingCurrentState
                     .attr('x',600)
-                    .attr('y',100)
+                    .attr('y',150)
                     .attr('fill', function(d){
                         var num = (currentState+1)*255/m
                         var num2 = 255 - (currentState+1)*255/m
@@ -177,7 +187,7 @@ $.getJSON("data.json", function(json) {
                     
                   movingNextState
                     .attr('x',700)
-                    .attr('y',100)
+                    .attr('y',150)
                     .attr('fill', function(d){
                         var num = (nextState+1)*255/m
                         var num2 = 255 - (nextState+1)*255/m
@@ -201,6 +211,24 @@ $.getJSON("data.json", function(json) {
                     .delay(400)
                     .attr('font-size',20)
                     .attr('fill','rgb(150,200,200)')
+                    
+                  title
+                    .attr('fill','rgb(50,150,150)')
+                    .transition()
+                    .duration(1000)
+                    .attr('fill','rgb(50,150,150)')
+//                     .attr('font-size', 30.5)
+//                     .attr('fill', function(d){
+//                         var num = (currentState+1)*255/m
+//                         var num2 = 255 - (nextState+1)*255/m
+//                         return "rgb("+num2+",200,"+num+")"})
+                    .transition(1000)
+                    .attr('fill','rgb(50,100,150)')
+//                     .attr('fill', function(d){
+//                         var num = (nextState+1)*255/m
+//                         var num2 = 255 - (nextState+1)*255/m
+//                         return "rgb("+num+",200,"+num2+")"})
+//                     .attr('font-size', 30)
                   currentState = nextState;
                 };
             };
