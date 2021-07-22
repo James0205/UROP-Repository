@@ -3,6 +3,7 @@
 //add "text"
 //add animation
 //dynamic width
+//add self loop
 
 %%javascript
 $.getJSON("nodes.json", function(jsonnodes) {
