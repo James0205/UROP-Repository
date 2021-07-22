@@ -1,49 +1,70 @@
 //Undirected graph using imported json for number of states
-//no links
+//straight links
 //https://www.d3indepth.com/force-layout/ <--- source
-
-%%javascript
-require.config({
-    paths: { 
-        d3: 'https://d3js.org/d3.v5.min'
-    }
-});
 
 %%javascript
 $.getJSON("nodes.json", function(jsonnodes) {
 $.getJSON("links.json", function(jsonlinks) {
     var nodes = jsonnodes;
-    console.log(nodes)
+//     console.log(nodes)
     var links = jsonlinks;
 //     console.log(links);
     (function(element) {
         require(['d3'], function(d3) {
-            var width = 750, height = 750
+            var width = 400, height = 300
             var svg = d3.select(element.get(0))
                         .append('svg')
                         .attr('width', width)
                         .attr('height', height);
-            
+//             var nodes = [
+//                         {id: 'A'},
+//                         {id: 'B'},
+//                         {id: 'C'},
+//                         {id: 'D'},
+//                         {id: 'E'},
+//                         {id: 'F'},
+//                         {id: 'G'},
+//                         {id: 'H'},
+//                         ]
+//             var links = [
+//                         {source: 0, target: 1},
+//                         {source: 0, target: 2},
+//                         {source: 0, target: 3},
+//                         {source: 1, target: 6},
+//                         {source: 3, target: 4},
+//                         {source: 3, target: 7},
+//                         {source: 4, target: 5},
+//                         {source: 4, target: 7}
+//                         ]
             var simulation = d3.forceSimulation(nodes)
-                        .force('charge', d3.forceManyBody().strength(-20))
+                        .force('charge', d3.forceManyBody().strength(-100))
                         .force('center', d3.forceCenter(width / 2, height / 2))
-                        .force('collision', d3.forceCollide().radius(function(d) {
-                        return d.radius
-                          }))
-                        .on('tick', ticked);
+                        .force('link', d3.forceLink().links(links).distance(30))
+                        .on('tick', ticked);          
+            
+            var link = svg.selectAll('link')
+                       .data(links)
+                       .enter()
+                       .append('line')
+                       .attr('stroke', 'black')
+                       .attr('stroke-width', 2)
+                       .attr('fill', 'none');
         
+            var node = svg.selectAll('circle')
+                       .data(nodes)
+                       .enter()
+                       .append('circle')
+                       .attr('r', 5);
+            
+            
             function ticked() {
-              var u = d3.select('svg')
-                        .selectAll('circle')
-                        .data(nodes)
-                        .join('circle')
-                        .attr('r', 5)
-                        .attr('cx', function(d) {
-                          return d.x
-                        })
-                        .attr('cy', function(d) {
-                        return d.y
-                        });
+                   node.attr('cx', d => d.x)
+                       .attr('cy', d => d.y);
+                
+                link.attr('x1', d => d.source.x)
+                       .attr('y1', d => d.source.y)
+                       .attr('x2', d => d.target.x)
+                       .attr('y2', d => d.target.y);
             }
         });
     })(element);
