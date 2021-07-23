@@ -1,3 +1,8 @@
+//Undirected graph using imported json for number of states
+//https://www.d3indepth.com/force-layout/ <--- source
+//https://observablehq.com/@d3/mobile-patent-suits <--- source
+//add path to animation
+
 %%javascript
 $.getJSON("data.json", function(jsonmatrix) {
 $.getJSON("nodes.json", function(jsonnodes) {
