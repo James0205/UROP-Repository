@@ -1,27 +1,29 @@
 //Undirected graph using imported json for number of states
 //https://www.d3indepth.com/force-layout/ <--- source
 //https://observablehq.com/@d3/mobile-patent-suits <--- source
-//add animation
-//dynamic width
+//add path to animation
 
 %%javascript
+$.getJSON("data.json", function(jsonmatrix) {
 $.getJSON("nodes.json", function(jsonnodes) {
 $.getJSON("links.json", function(jsonlinks) {
+    var transitionMatrix = jsonmatrix;
+    var num = transitionMatrix.length;    //obtain number of states
+    var currentState = 0;
+    var pi = Math.PI; //determine Pi
+    var m = transitionMatrix.length; // number of states
     var nodes = jsonnodes;
     var links = jsonlinks;
     (function(element) {
         require(['d3'], function(d3) {
-            var width = 800, height = 800
-            
-            var types = Array.from(new Set(links.map(d => d.type)));
-               
+            var width = 800, height = 800   
+            var types = Array.from(new Set(links.map(d => d.type)));  
             var color = d3.scaleOrdinal(types,d3.schemeCategory10);        
-            
             var svg = d3.select(element.get(0))
                         .append('svg')
                         .attr('width', width)
                         .attr('height', height);
-
+            
             var arrows = svg.selectAll('.arrows')
                         .data(types)
                         .enter()
@@ -32,9 +34,22 @@ $.getJSON("links.json", function(jsonlinks) {
                         .attr("id", d =>`arrow-${d}`)
                         .attr("viewBox", "0 -10 20 20")
                         .attr("refX", 35)
-                        .attr("refY", -0.5)
-                        .attr("markerWidth", 6)
-                        .attr("markerHeight", 6)
+                        .attr("refY", 0)
+                        .attr("markerWidth", 4)
+                        .attr("markerHeight", 4)
+                        .attr("orient", "auto-start-reverse")
+                      .append("path")
+                        .attr("fill", color)
+                        .attr("d", "M0,-10L20,0L0,10");
+            
+                arrows.append("defs")
+                        .append("marker")
+                        .attr("id", d =>`arrow2-${d}`)
+                        .attr("viewBox", "0 -10 20 20")
+                        .attr("refX", 20)
+                        .attr("refY", 2)
+                        .attr("markerWidth", 3)
+                        .attr("markerHeight", 3)
                         .attr("orient", "auto-start-reverse")
                       .append("path")
                         .attr("fill", color)
@@ -43,18 +58,17 @@ $.getJSON("links.json", function(jsonlinks) {
             var simulation = d3.forceSimulation(nodes)
                         .force('charge', d3.forceManyBody().strength(-500))
                         .force('center', d3.forceCenter(width / 2, height / 2))
-                        .force('link', d3.forceLink().links(links).distance(300))
-                        .on('tick', ticked);          
-            
+                        .force('link', d3.forceLink().links(links).distance(400))
+                        .on('tick', ticked);
+         
             var link = svg.selectAll('link')
                        .data(links)
                        .enter()
                        .append('path')
                        .attr('stroke', d => color(d.type))
-                       .attr('stroke-width', 3)
-                       .attr('marker-end', d => `url(${new URL(`#arrow-${d.type}`,location)})`)
-                           .attr('stroke-width',2)
-                        .attr('fill', 'none');
+                       .attr('stroke-width',function(d){
+                            return 4+10*d.stroke
+                        });
             
             var node = svg.append("g")
                        .selectAll('circle')
@@ -68,7 +82,7 @@ $.getJSON("links.json", function(jsonlinks) {
                        .attr('stroke-width',2)
                        .attr("stroke-linecap", "round")
                        .attr("stroke-linejoin", "round")
-                       .attr('r', 25);
+                       .attr('r', 20);
             
                    node.append("text")
                        .attr("x", -8)
@@ -79,12 +93,23 @@ $.getJSON("links.json", function(jsonlinks) {
                        .attr('font-weight','bold')
                        .text(d=>d.name);
             
+            var transitionCircle = svg.append("circle")
+                    .attr("fill","black")
+                    .attr("cx",width/2)
+                    .attr("cy",height/2)
+                    .attr("opacity",0.3)
+                    .attr("stroke","white")
+                    .attr("stroke-width",3)
+                    .attr("r", 10);
+            
             function linkArc(d) {
                         if (d.source == d.target) {
                       const r = Math.hypot(d.target.x - d.source.x, d.target.y - d.source.y);
                       return `
-                            M${d.source.x},${d.source.y+5}
-                            C${d.source.x+100},${d.source.y+100} ${d.source.x+100},${d.source.y-100} ${d.target.x},${d.target.y-5}
+                            M${d.source.x+10},${d.source.y+10}
+                            C${d.source.x+100},${d.source.y+100} 
+                            ${d.source.x+100},${d.source.y-100} 
+                            ${d.target.x+10},${d.target.y-10}
                       `;
                         } else {
                       const r = Math.hypot(d.target.x - d.source.x, d.target.y - d.source.y);
@@ -94,13 +119,51 @@ $.getJSON("links.json", function(jsonlinks) {
                       `;      
                         }};
             
+            function markertype(d){
+                        if (d.source == d.target) {
+                      return `url(${new URL(`#arrow2-${d.type}`,location)})`
+                        } else {
+                      return `url(${new URL(`#arrow-${d.type}`,location)})`      
+                        }};
+            
+            simulation.tick(200);
+            
             function ticked() {
                 node.attr("transform", d => `translate(${d.x},${d.y})`);
-                
-                   link.attr("d", linkArc)
-                       .attr("opacity",0.5)
-                       .attr("stroke-width",4);
+
+                link.attr('marker-end', markertype)
+                    .attr('fill', 'none')
+                    .attr("d", linkArc)
+                    .attr("opacity",0.3)
             }
+            repeat();
+            function repeat() {
+                var i = currentState;
+                var nextStates = transitionMatrix[i];
+                var nextState = -1;
+                var rand = Math.random();
+                var total = 0;
+                for(var j = 0; j < nextStates.length; j++) {
+                    total += nextStates[j];  // generating next state
+                if(rand < total) {
+                    nextState = j;
+                    break;
+                }}
+                transitionCircle  //animations
+                    .transition()
+                    .ease(d3.easePoly)
+                    .duration(1500)
+                    .attr('cx', function(d){
+                        return nodes[currentState].x})
+                    .attr('cy',function(d){
+                        return nodes[currentState].y})
+                    .transition()
+                    .attr('cx', function(d){
+                        return nodes[nextState].x})
+                    .attr('cy',function(d){
+                        return nodes[nextState].y})
+                    .on("end", repeat);
+            };
         });
     })(element);
-})})
+})})})
