@@ -1,8 +1,3 @@
-//Undirected graph using imported json for number of states
-//https://www.d3indepth.com/force-layout/ <--- source
-//https://observablehq.com/@d3/mobile-patent-suits <--- source
-//add path to animation
-
 %%javascript
 $.getJSON("data.json", function(jsonmatrix) {
 $.getJSON("nodes.json", function(jsonnodes) {
@@ -34,7 +29,7 @@ $.getJSON("links.json", function(jsonlinks) {
                         .attr("id", d =>`arrow-${d}`)
                         .attr("viewBox", "0 -10 20 20")
                         .attr("refX", 35)
-                        .attr("refY", 0)
+                        .attr("refY", -2)
                         .attr("markerWidth", 4)
                         .attr("markerHeight", 4)
                         .attr("orient", "auto-start-reverse")
