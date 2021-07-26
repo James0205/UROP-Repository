@@ -1,7 +1,6 @@
 //Undirected graph using imported json for number of states
 //https://www.d3indepth.com/force-layout/ <--- source
 //https://observablehq.com/@d3/mobile-patent-suits <--- source
-//add path to animation
 
 %%javascript
 $.getJSON("data.json", function(jsonmatrix) {
@@ -14,6 +13,8 @@ $.getJSON("links.json", function(jsonlinks) {
     var m = transitionMatrix.length; // number of states
     var nodes = jsonnodes;
     var links = jsonlinks;
+    var transitionTime = 1500;
+    var linkDistance = 300;
     (function(element) {
         require(['d3'], function(d3) {
             var width = 800, height = 800   
@@ -33,10 +34,10 @@ $.getJSON("links.json", function(jsonlinks) {
                         .append("marker")
                         .attr("id", d =>`arrow-${d}`)
                         .attr("viewBox", "0 -10 20 20")
-                        .attr("refX", 35)
-                        .attr("refY", -2)
-                        .attr("markerWidth", 4)
-                        .attr("markerHeight", 4)
+                        .attr("refX", 0)
+                        .attr("refY", 0)
+                        .attr("markerWidth", 3)
+                        .attr("markerHeight", 3)
                         .attr("orient", "auto-start-reverse")
                       .append("path")
                         .attr("fill", color)
@@ -46,7 +47,7 @@ $.getJSON("links.json", function(jsonlinks) {
                         .append("marker")
                         .attr("id", d =>`arrow2-${d}`)
                         .attr("viewBox", "0 -10 20 20")
-                        .attr("refX", 20)
+                        .attr("refX", 10)
                         .attr("refY", 2)
                         .attr("markerWidth", 3)
                         .attr("markerHeight", 3)
@@ -56,9 +57,9 @@ $.getJSON("links.json", function(jsonlinks) {
                         .attr("d", "M0,-10L20,0L0,10");
             
             var simulation = d3.forceSimulation(nodes)
-                        .force('charge', d3.forceManyBody().strength(-500))
+                        .force('charge', d3.forceManyBody().strength(-800))
                         .force('center', d3.forceCenter(width / 2, height / 2))
-                        .force('link', d3.forceLink().links(links).distance(400))
+                        .force('link', d3.forceLink().links(links).distance(linkDistance))
                         .on('tick', ticked);
          
             var link = svg.selectAll('link')
@@ -66,8 +67,9 @@ $.getJSON("links.json", function(jsonlinks) {
                        .enter()
                        .append('path')
                        .attr('stroke', d => color(d.type))
+                       .attr('fill','none')
                        .attr('stroke-width',function(d){
-                            return 4+10*d.stroke
+                            return 2+8*d.stroke
                         });
             
             var node = svg.append("g")
@@ -102,23 +104,6 @@ $.getJSON("links.json", function(jsonlinks) {
                     .attr("stroke-width",3)
                     .attr("r", 10);
             
-            function linkArc(d) {
-                        if (d.source == d.target) {
-                      const r = Math.hypot(d.target.x - d.source.x, d.target.y - d.source.y);
-                      return `
-                            M${d.source.x+10},${d.source.y+10}
-                            C${d.source.x+100},${d.source.y+100} 
-                            ${d.source.x+100},${d.source.y-100} 
-                            ${d.target.x+10},${d.target.y-10}
-                      `;
-                        } else {
-                      const r = Math.hypot(d.target.x - d.source.x, d.target.y - d.source.y);
-                      return `
-                            M${d.source.x},${d.source.y}
-                            A${r},${r} 0 0,1 ${d.target.x},${d.target.y}
-                      `;      
-                        }};
-            
             function markertype(d){
                         if (d.source == d.target) {
                       return `url(${new URL(`#arrow2-${d.type}`,location)})`
@@ -126,16 +111,58 @@ $.getJSON("links.json", function(jsonlinks) {
                       return `url(${new URL(`#arrow-${d.type}`,location)})`      
                         }};
             
+            function curvepath1(d){
+                            var dx = d.target.x - d.source.x,
+                                dy = d.target.y - d.source.y,
+                                dr = Math.sqrt(dx **2 + dy **2);
+                              return "M" + d.source.x + "," + d.source.y + "A" + dr + "," 
+                              + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+                          };
+            
+            function curvepath2(d){
+                        if (d.source == d.target) {
+                            var xRotation = -45;
+                            var  largeArc = 1;
+                            var  sweep = 1;
+                            var drx = 30;
+                            var dry = 30;
+                            var dx1 = d.source.x+20,
+                                dy1 = d.source.y+20,
+                                dx2 = d.target.x+20,
+                                dy2 = d.target.y-20;
+
+                             return "M" + dx1 + "," + dy1 + "A" + drx + "," 
+                                 + dry + " " + xRotation + ","+ largeArc + "," + 0 + " " + 
+                                 dx2 + "," + dy2;
+                        } else {
+                    // length of current path
+                      var pl = this.getTotalLength(),
+                        // radius of circle plus marker head
+                        r = 45 + 5.6568, 
+//                     position close to where path intercepts circle
+                        m = this.getPointAtLength(pl - r),
+                        m2= this.getPointAtLength(r);
+
+                       var dx = m.x - d.source.x,
+                        dy = m.y - d.source.y,
+                        dr = Math.sqrt(dx * dx + dy * dy);
+
+                       return "M" + m2.x + "," + m2.y + "A" + dr + "," + dr 
+                           + " 0 0,1 " + m.x + "," + m.y;
+                  }};
+                
             simulation.tick(200);
             
             function ticked() {
                 node.attr("transform", d => `translate(${d.x},${d.y})`);
-
+                
                 link.attr('marker-end', markertype)
                     .attr('fill', 'none')
-                    .attr("d", linkArc)
                     .attr("opacity",0.3)
+                    .attr("d", curvepath1)
+                    .attr("d", curvepath2);
             }
+            
             repeat();
             function repeat() {
                 var i = currentState;
@@ -149,20 +176,67 @@ $.getJSON("links.json", function(jsonlinks) {
                     nextState = j;
                     break;
                 }}
+                
+                var line = d3.line().curve(d3.curveNatural)
+                
+                var path = svg.append("path")
+                .style("stroke", "none")
+                .style("fill", "none")
+                .attr("d", function(){
+                    if (currentState == nextState) {
+                      var xRotation = -45;
+                            var  largeArc = 1;
+                            var  sweep = 1;
+                            var drx = 30;
+                            var dry = 30;
+                            var dx1 = nodes[currentState].x,
+                                dy1 = nodes[currentState].y,
+                                dx2 = nodes[nextState].x,
+                                dy2 = nodes[nextState].y-0.1;
+
+                             return "M" + dx1 + "," + dy1 + "A" + drx + "," 
+                                 + dry + " " + xRotation + ","+ largeArc + "," + 0 + " " + 
+                                 dx2 + "," + dy2;
+                        } else {
+                          var dx = nodes[nextState].x - nodes[currentState].x,
+                            dy = nodes[nextState].y - nodes[currentState].y,
+                            dr = Math.sqrt(dx **2 + dy **2);
+                          return "M" + nodes[currentState].x + "," + nodes[currentState].y 
+                          + "A" + dr + "," + dr + " 0 0,1 " + nodes[nextState].x + "," 
+                          + nodes[nextState].y;
+                  }})
+
                 transitionCircle  //animations
                     .transition()
-                    .ease(d3.easePoly)
-                    .duration(1500)
-                    .attr('cx', function(d){
-                        return nodes[currentState].x})
-                    .attr('cy',function(d){
-                        return nodes[currentState].y})
+                    .ease(d3.easeBounce)
+                    .duration(transitionTime/15)
+                    .attr('r',10)
+                    .attr('x',nodes[currentState].x)
+                    .attr('y',nodes[currentState].y)
                     .transition()
-                    .attr('cx', function(d){
-                        return nodes[nextState].x})
-                    .attr('cy',function(d){
-                        return nodes[nextState].y})
+                    .ease(d3.easeLinear)
+                    .duration(transitionTime*10/15)
+                    .tween("pathTween",function(){return pathTween(path)})
+                    .attr('r',10)
+                    .transition()
+                    .ease(d3.easeBounce)
+                    .duration(transitionTime*4/15)
+                    .attr('x',nodes[nextState].x)
+                    .attr('y',nodes[nextState].y)
+                    .attr('r',20)
                     .on("end", repeat);
+                
+                function pathTween(path){
+                    var length = path.node().getTotalLength(); // Get the length of the path
+                    var r = d3.interpolate(0, length); //Set up interpolation from 0 to the path length
+                    return function(t){
+                        var point = path.node().getPointAtLength(r(t)); // Get the next point along the path
+                        d3.select(this) // Select the circle
+                        .attr("cx", point.x) // Set the cx
+                        .attr("cy", point.y) // Set the cy
+                    }
+                }
+                currentState = nextState;
             };
         });
     })(element);
