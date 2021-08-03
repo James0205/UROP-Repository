@@ -27,7 +27,7 @@ define('visualisation', ['d3'], function (d3) {
                         .append("marker")
                         .attr("id", d =>`arrow-${d}`)
                         .attr("viewBox", "0 -10 20 20")
-                        .attr("refX", 0)
+                        .attr("refX", 1)
                         .attr("refY", 0)
                         .attr("markerWidth", 3)
                         .attr("markerHeight", 3)
@@ -158,6 +158,54 @@ define('visualisation', ['d3'], function (d3) {
                         .on('mouseover', motionIn)
                         .on('mouseout', motionOut);
         
+            function motionIn(d){ //animation for nodes
+                                var name = "",
+                                    length = 0,
+                                    locx = 0,
+                                    locy = 0;
+                                   d3.select(this).transition()
+                                                  .attr("x",-15)
+                                                  .attr("y",-15)
+                                                  .attr('width',30)
+                                                  .attr('height',function(d){
+                                                       name = d.name
+                                                       locx = d.x
+                                                       locy = d.y
+                                                       length = 10+10*d.name.length
+                                                       return 30});
+                                                   
+                           
+                                   gg.append("rect")
+                                        .attr("rx", 6)
+                                        .attr("ry", 6)
+                                        .attr('height',20)
+                                        .attr('width',length)
+                                        .attr('id','stateCircle')
+                                        .attr('fill','black')
+                                        .attr('opacity',0.5)
+                                        .attr('x',locx-length/2)
+                                        .attr('y',locy+22)
+
+                                   gg.append("text")
+                                       .attr("id", 'stateshow')
+                                       .attr('font-size',15)
+                                       .attr('fill','white')
+                                       .attr('x',locx)
+                                       .attr('y',locy+37.5)
+                                       .attr('text-anchor','middle')
+                                       .text(name)
+            };
+            
+            function motionOut(d) { //animation for nodes
+                                    d3.select(this).transition()
+                                                   .attr("x",-10)
+                                                   .attr("y",-10)
+                                                   .attr('height',20)
+                                                   .attr('width',20);
+                                    d3.select('#stateshow').remove();
+                                    d3.select('#stateCircle').remove();
+                        };
+        
                 
             var transitionCircle = gg.append("circle") //circle in motion
                     .attr("fill","black")
@@ -214,56 +262,7 @@ define('visualisation', ['d3'], function (d3) {
                        return "M" + m2.x + "," + m2.y + "A" + dr + "," + dr 
                            + " 0 0,1 " + m.x + "," + m.y;
                   }};
-                         
-           function motionIn(d){ //animation for nodes
-                                var name = "",
-                                    length = 0,
-                                    locx = 0,
-                                    locy = 0;
-                                   d3.select(this).transition()
-                                                  .attr("x",-15)
-                                                  .attr("y",-15)
-                                                  .attr('width',30)
-                                                  .attr('height',function(d){
-                                                       name = d.name
-                                                       locx = d.x
-                                                       locy = d.y
-                                                       length = 10+10*d.name.length
-                                                       return 30});
-                                                   
-                           
-                                   gg.append("rect")
-                                        .attr("rx", 6)
-                                        .attr("ry", 6)
-                                        .attr('height',20)
-                                        .attr('width',length)
-                                        .attr('id','stateCircle')
-                                        .attr('fill','black')
-                                        .attr('opacity',0.5)
-                                        .attr('x',locx-length/2)
-                                        .attr('y',locy+22)
-
-                                   gg.append("text")
-                                       .attr("id", 'stateshow')
-                                       .attr('font-size',15)
-                                       .attr('fill','white')
-                                       .attr('x',locx)
-                                       .attr('y',locy+37.5)
-                                       .attr('text-anchor','middle')
-                                       .text(name)
-            };
-            
-            function motionOut(d) { //animation for nodes
-                                    d3.select(this).transition()
-                                                   .attr("x",-10)
-                                                   .attr("y",-10)
-                                                   .attr('height',20)
-                                                   .attr('width',20);
-                                    d3.select('#stateshow').remove();
-                                    d3.select('#stateCircle').remove();
-                        };
         
-            
             function ticked() {
                 node.attr("transform", d => `translate(${d.x},${d.y})`);
 
