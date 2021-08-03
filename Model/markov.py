@@ -1,13 +1,9 @@
-from IPython.display import display, Javascript, HTML
-import json
-import ipywidgets as widgets
-import pandas as pd
-from datetime import datetime
 import numpy as np
 import string
 import random
 import json
 
+# generate sample matrix
 def sample(states_num: int = 4,
                        transition_prob: float = None,
                        noise_scale: float = 0.01,
@@ -27,6 +23,7 @@ def softmax(x):
     """Compute softmax values for each sets of scores in x."""
     return np.exp(x) / np.sum(np.exp(x), axis=0)
 
+# compute data required [matrix,nodes,links]
 def saveData(sample_matrix: float = sample(),
              profile: dict = None):
     """Saving data into json files"""
@@ -53,26 +50,3 @@ def saveData(sample_matrix: float = sample(),
                           "type": i,
                           "stroke": data[i][j]})
     return data, nodes, links
-
-def slider(start_date,end_date):
-    dates = pd.date_range(start_date, end_date, freq='D')
-
-    options = [(date.strftime(' %d %b %Y '), date) for date in dates]
-
-    selection_slider = widgets.SelectionSlider(
-        options=options,
-        description='Dates',
-        orientation='horizontal',
-        layout={'width': '600px'},
-        readout = True
-    )
-    return selection_slider
-
-def visualise(transitionMatrix,nodes,links,transitionTime):
-    display(Javascript("""
-        (function(element){
-            require(['visualisation'], function(visualisation) {
-                visualisation(element.get(0), %s, %s, %s, %d)
-            });
-        })(element);
-    """ % (json.dumps(transitionMatrix),json.dumps(nodes),json.dumps(links),transitionTime)))
