@@ -1,0 +1,27 @@
+<script src="/static/components/requirejs/require.js"></script>
+<div id="d3-container-%%unique-id%%"></div>
+<div>Select Date</div>
+
+<style>
+    .links path {
+        fill: none;
+    }
+    .nodes circle {
+        pointer-events: all;
+        stroke: #fff;
+        stroke-width: 2px;
+        opacity: 1.0;
+    }
+    .nodes text {
+        pointer-events: none;
+        font: 10px sans-serif;
+        fill: #fff;
+        stroke-width: 0.6px;
+        opacity: 1.0;
+    }
+</style>
+
+<div class="range-slider">
+  <input class="range-slider__range" type="range" min="0" max="61" step="1">
+  <h1 class="range-slider__value">null</h1>
+</div>
