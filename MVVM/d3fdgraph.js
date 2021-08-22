@@ -9,8 +9,8 @@ require(["d3"], function(d3) {
     //console.log(d3.version);
 
     // size of plot
-    const width = 1000;
-    const height = 600;
+    const width = %%width%%;
+    const height = %%height%%;
 
     // node radius
     const node_radius = %%noderadius%%;
@@ -20,6 +20,8 @@ require(["d3"], function(d3) {
     const collision_scale = %%collisionscale%%;
     // link width scale
     const link_width_scale = %%linkwidthscale%%;
+    // link charge
+    const link_charge = %%linkcharge%%;
 
     // links and nodes data
     const links = %%links%%;
@@ -31,7 +33,7 @@ require(["d3"], function(d3) {
     // create simulation
     const simulation = d3.forceSimulation(nodes)
                         .force("link", d3.forceLink().links(links).distance(d => link_distance-d.weight*150))
-                        .force("charge", d3.forceManyBody().strength(-200))
+                        .force("charge", d3.forceManyBody().strength(link_charge))
                         .force('collision', d3.forceCollide().radius(collision_scale * node_radius))
                         .force("center", d3.forceCenter(width / 2, height / 2))
                         .stop();
@@ -158,8 +160,8 @@ require(["d3"], function(d3) {
                 
             d3.select(this).transition()
                            .attr('opacity', function(d){
-                                probability = d.weight
-                                length = 10+8*d.weight.toString().length
+                                probability = Math.round((d.weight + Number.EPSILON) * 100) / 100
+                               length = 10 + 8 * probability.toString().length
                                 if(d.source == d.target){ //set position arguments
                                    dxx = ((d.source.x+d.target.x)/2)+40
                                    dyy = ((d.source.y+d.target.y)/2)-40}else{
