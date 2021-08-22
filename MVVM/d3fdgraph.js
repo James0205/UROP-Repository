@@ -9,8 +9,8 @@ require(["d3"], function(d3) {
     //console.log(d3.version);
 
     // size of plot
-    const width = %%width%%;
-    const height = %%height%%;
+    const width = 1000;
+    const height = 600;
 
     // node radius
     const node_radius = %%noderadius%%;
@@ -20,12 +20,10 @@ require(["d3"], function(d3) {
     const collision_scale = %%collisionscale%%;
     // link width scale
     const link_width_scale = %%linkwidthscale%%;
-    // link charge
-    const link_charge = %%linkcharge%%;
 
     // links and nodes data
     const links = %%links%%;
-    const nodes = %%nodes%%;  
+    const nodes = %%nodes%%; 
     
     var types = Array.from(new Set(nodes.map(d => d.id))),
         color = d3.scaleOrdinal(types,d3.schemeCategory10);
@@ -33,7 +31,7 @@ require(["d3"], function(d3) {
     // create simulation
     const simulation = d3.forceSimulation(nodes)
                         .force("link", d3.forceLink().links(links).distance(d => link_distance-d.weight*150))
-                        .force("charge", d3.forceManyBody().strength(link_charge))
+                        .force("charge", d3.forceManyBody().strength(-200))
                         .force('collision', d3.forceCollide().radius(collision_scale * node_radius))
                         .force("center", d3.forceCenter(width / 2, height / 2))
                         .stop();
@@ -160,8 +158,8 @@ require(["d3"], function(d3) {
                 
             d3.select(this).transition()
                            .attr('opacity', function(d){
-                                probability = Math.round((d.weight + Number.EPSILON) * 100) / 100
-                               length = 10 + 8 * probability.toString().length
+                                probability = d.weight
+                                length = 10+8*d.weight.toString().length
                                 if(d.source == d.target){ //set position arguments
                                    dxx = ((d.source.x+d.target.x)/2)+40
                                    dyy = ((d.source.y+d.target.y)/2)-40}else{
@@ -275,7 +273,7 @@ require(["d3"], function(d3) {
                    r = 25.6568, 
                // position close to where path intercepts circle
                    m = this.getPointAtLength(pl - r), //approaching end
-                   m2= this.getPointAtLength(r); //leaving end
+                   m2= this.getPointAtLength(r+2); //leaving end
 
                var dx = m.x - d.source.x,
                    dy = m.y - d.source.y,
@@ -286,10 +284,6 @@ require(["d3"], function(d3) {
                }};
     
     //setting initial zoom level
-    function delayZoomFit() {
-               var zoomFunction = setTimeout(lapsedZoomFit, 0);
-               };
-
     function lapsedZoomFit() {
                var bounds = svg.node().getBBox(),
                    midX = bounds.x+bounds.width/2,
@@ -302,43 +296,7 @@ require(["d3"], function(d3) {
                                       .translate(translateX, translateY)
                                       .scale(scale)
                         );
-    }delayZoomFit();
-    
-    //slider functionalities
-    var getDaysArray = function(start, end) {
-               for(var arr=[],dt=new Date(start); dt<=end; dt.setDate(dt.getDate()+1)){
-               arr.push(new Date(dt));
-               }
-               return arr;
-               };
-        
-    var daylist = getDaysArray(new Date("2018-05-01"),new Date("2018-07-01"));
+    }lapsedZoomFit();
 
-    d3.select('.range-slider__range').on('change',function(d){
-    //         update();
-//                var slider = document.getElementById("myRange");
-//                var output = document.getElementById("slider3text");
-//                output.innerHTML = daylist[slider.value];
-               });
-
-    var rangeSlider = function(){
-              var slider = $('.range-slider'),
-                  range = $('.range-slider__range'),
-                  value = $('.range-slider__value');
-    
-              slider.each(function(){
-                    value.each(function(){
-                          var value = $(this).prev().attr('value');
-                          $(this).html(value);
-                    });
-
-                    range.on('input', function(){
-                          $(this).next(value).html(daylist[this.value].toDateString());
-                    });
-              });
-              };
-    
-    rangeSlider();
-    
     //return svg.node();
 });
