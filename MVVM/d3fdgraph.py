@@ -9,7 +9,7 @@ import json
 def plot_force_directed_graph(transitionMatrix: float = None, state_name=None, images=None, **kwargs):
 
     # generate random identifier for SVG element, to avoid name clashes if used multiple times in a notebook
-    uid = str(uuid.uuid1())
+    uid = str(uuid.uuid4())
 
     # load html template file
     html = Path('d3fdgraph.html').read_text().replace('%%unique-id%%', uid)
