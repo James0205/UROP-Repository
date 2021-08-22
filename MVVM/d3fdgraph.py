@@ -1,40 +1,37 @@
 import IPython.core.display
-import pkg_resources
+from pathlib import Path
+import uuid
 import numpy as np
 import string
 import json
-import random
 
 
-def plot_force_directed_graph(transitionMatrix: float=None, state_name=None, images=None, node_radius=10, link_distance=180, collision_scale=4, link_width_scale=4, ticks=200):
-
-    # convert graph nodes and links to json, ready for d3
-    graph_json_nodes = json.dumps(nodesCalibration(transitionMatrix,state_name,images))
-    graph_json_links = json.dumps(linksCalibration(transitionMatrix))
-
-    # load html and javascript from template files
-    resource_package = __name__ 
-    html_template = 'd3fdgraph.html'
-    html = pkg_resources.resource_string(resource_package, html_template).decode('utf-8')
-    javascript_template = 'd3fdgraph.js'
-    js_code = pkg_resources.resource_string(resource_package, javascript_template).decode('utf-8')
+def plot_force_directed_graph(transitionMatrix: float = None, state_name=None, images=None, **kwargs):
 
     # generate random identifier for SVG element, to avoid name clashes if used multiple times in a notebook
-    random_id_string = str(random.randrange(1000000,9999999))
-    # replace placeholder in both html and js templates
-    html = html.replace('%%unique-id%%', random_id_string)
-    js_code = js_code.replace('%%unique-id%%', random_id_string)
+    uid = str(uuid.uuid1())
 
-    # substitute configuration values
-    js_code = js_code.replace('%%noderadius%%', str(node_radius))
-    js_code = js_code.replace('%%linkdistance%%', str(link_distance))
-    js_code = js_code.replace('%%collisionscale%%', str(collision_scale))
-    js_code = js_code.replace('%%linkwidthscale%%', str(link_width_scale))
-    js_code = js_code.replace('%%ticks%%', str(ticks))
+    # load html template file
+    html = Path('d3fdgraph.html').read_text().replace('%%unique-id%%', uid)
 
-    # substitute links and data
-    js_code = js_code.replace('%%links%%', str(graph_json_links))
-    js_code = js_code.replace('%%nodes%%', str(graph_json_nodes))
+    # convert graph nodes and links to json, ready for d3
+    json_nodes = json.dumps(nodesCalibration(transitionMatrix,state_name,images))
+    json_links = json.dumps(linksCalibration(transitionMatrix))
+    
+    # Use different adjustable configuration values
+    config =    {'width': 800,
+                'height': 400,
+                'noderadius': 10,
+                'linkcharge': 600,
+                'linkdistance': 180,
+                'collisionscale': 4,
+                'linkwidthscale': 4,
+                'ticks': 200,
+                'nodes': json_nodes,
+                'links': json_links}
+
+    config.update(kwargs)
+    js_code = create_d3_fdgraph(uid, config)
 
     # display html in notebook cell
     IPython.core.display.display_html(IPython.core.display.HTML(html))
@@ -42,6 +39,16 @@ def plot_force_directed_graph(transitionMatrix: float=None, state_name=None, ima
     # display (run) javascript in notebook cell
     IPython.core.display.display_javascript(IPython.core.display.Javascript(data=js_code))
     pass
+
+
+def create_d3_fdgraph(uid, config):
+    js_code = Path('d3fdgraph.js').read_text()
+    js_code = js_code.replace('%%unique-id%%', uid)
+    for key, value in config.items():
+        js_code = js_code.replace(f'%%{key}%%', str(value))
+
+    return js_code
+
 
 def nodesCalibration(transitionMatrix: float=None, state_name=None, images=None):
     if type(transitionMatrix) == type(None):
