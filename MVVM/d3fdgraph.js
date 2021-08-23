@@ -27,7 +27,10 @@ require(["d3"], function(d3) {
     const links = %%links%%;
     const nodes = %%nodes%%; 
     
-    // Boolean if colour is given
+    // boolean if zoom is disabled
+    const zoomBoolean = %%zoomBoolean%%
+    
+    // boolean if colour is given
     const colourGiven = %%colourGiven%%;
     const colourArray = %%colourArray%%;
 
@@ -55,7 +58,7 @@ require(["d3"], function(d3) {
                  .extent([[0, 0], [width, height]])
                  .scaleExtent([0.2, 10])
                  .on("zoom", zoomed);
-            
+    
             //set zoom for model
     function zoomed({transform}) {
                     node.attr("transform",transform); 
@@ -69,6 +72,13 @@ require(["d3"], function(d3) {
         .attr("width", width)
         .attr("height", height)
         .call(zoom);
+    
+    // setting zoom booleans to disable zoom
+    if (zoomBoolean) {
+            svg.call(zoom);
+        } else {
+            svg.on('.zoom', null);
+        }
     
     // add arrow marker to links
     const arrows = svg.attr("class", "arrow")
@@ -313,21 +323,5 @@ require(["d3"], function(d3) {
                                       .scale(scale)
                                 );
     }lapsedZoomFit();
-    
-    //setting toggle zoom button
-    var zoomEnabled;
-    var zoomToggle = d3.select('.zoomToggle').on('click', toggleZoom);
-    toggleZoom();
-
-    function toggleZoom(){
-        zoomEnabled = !zoomEnabled;
-        if (zoomEnabled) {
-            svg.call(zoom);
-        } else {
-            svg.on('.zoom', null);
-        }
-    zoomToggle.node().innerText = 'Zoom is ' + (zoomEnabled ? 'enabled' : 'disabled');
-    }; 
-
     //return svg.node();
 });
