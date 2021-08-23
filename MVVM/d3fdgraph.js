@@ -9,8 +9,8 @@ require(["d3"], function(d3) {
     //console.log(d3.version);
 
     // size of plot
-    const width = 1000;
-    const height = 600;
+    const width = %%width%%;
+    const height = %%height%%;
 
     // node radius
     const node_radius = %%noderadius%%;
@@ -20,25 +20,37 @@ require(["d3"], function(d3) {
     const collision_scale = %%collisionscale%%;
     // link width scale
     const link_width_scale = %%linkwidthscale%%;
+    // link charge
+    const link_charge = %%linkcharge%%;
 
     // links and nodes data
     const links = %%links%%;
     const nodes = %%nodes%%; 
     
-    var types = Array.from(new Set(nodes.map(d => d.id))),
-        color = d3.scaleOrdinal(types,d3.schemeCategory10);
+    // Boolean if colour is given
+    const colourGiven = %%colourGiven%%;
+    const colourArray = %%colourArray%%;
+
+    if (%%colourGiven%% == true){
+        var types = Array.from(new Set(nodes.map(d => d.id))),
+            color = d3.scaleOrdinal(types,colourArray);
+    }else{
+        var types = Array.from(new Set(nodes.map(d => d.id))),
+            color = d3.scaleOrdinal(types,d3.schemeCategory10);
+    };
 
     // create simulation
     const simulation = d3.forceSimulation(nodes)
                         .force("link", d3.forceLink().links(links).distance(d => link_distance-d.weight*150))
-                        .force("charge", d3.forceManyBody().strength(-200))
+                        .force("charge", d3.forceManyBody().strength(link_charge))
                         .force('collision', d3.forceCollide().radius(collision_scale * node_radius))
                         .force("center", d3.forceCenter(width / 2, height / 2))
                         .stop();
     
+    // allow simulation to run
     simulation.tick(%%ticks%%);
 
-                    
+    // define d3.zoom                
     var zoom = d3.zoom()
                  .extent([[0, 0], [width, height]])
                  .scaleExtent([0.2, 10])
@@ -64,7 +76,8 @@ require(["d3"], function(d3) {
                         .data(types)
                         .enter()
                         .append("g")
-                        
+         
+    //for loops away from self
     const arrow_away = arrows.append("defs")
                        .append("marker")
                         .attr("id", d => `arrow-${d}`)
@@ -77,7 +90,8 @@ require(["d3"], function(d3) {
                         .append("path")
                         .attr("fill", color)
                         .attr("d", "M0,-10L20,0L0,10");
-            
+       
+    //for self loops
     const arrow_self = arrows.append("defs")
                        .append("marker")
                         .attr("id", d =>`arrow2-${d}`)
@@ -113,7 +127,7 @@ require(["d3"], function(d3) {
             .data(nodes)
             .enter().append("g");
 
-
+    // circular nodes
     const circle = node.append("circle")
             .attr("r", node_radius)
             .attr('fill',d => color(d.id))
@@ -143,6 +157,7 @@ require(["d3"], function(d3) {
             .on('mouseout', motionOutNode);
     
     const group = svg.append("g");
+    
     //choosing marker types based on loop style
     function markerType(d){ //set different marker for self loop
             if (d.source == d.target) {
@@ -151,15 +166,15 @@ require(["d3"], function(d3) {
             return `url(${new URL(`#arrow-${d.source.id}`,location)})`      
             }};
     
-    //hover animation for Links
+    //hover-in animation for Links
     function motionInLink(d){
             var dxx = 0,probability = 0,
                 dyy = 0,length = 0;
                 
             d3.select(this).transition()
                            .attr('opacity', function(d){
-                                probability = d.weight
-                                length = 10+8*d.weight.toString().length
+                                probability = Math.round((d.weight + Number.EPSILON) * 100) / 100
+                                length = 10 + 8 * probability.toString().length
                                 if(d.source == d.target){ //set position arguments
                                    dxx = ((d.source.x+d.target.x)/2)+40
                                    dyy = ((d.source.y+d.target.y)/2)-40}else{
@@ -189,6 +204,7 @@ require(["d3"], function(d3) {
                .text(probability)
             };
         
+    //hover-out animation for Links
     function motionOutLink(d) {
             d3.select(this).transition()
                            .attr('opacity', 0.3)
@@ -196,7 +212,6 @@ require(["d3"], function(d3) {
             d3.select('#probabilityshow').remove(); //remove elements when mouse out
             d3.select('#indicatorRect').remove();
             };
-    
     
     //hover animation for Nodes
     function motionInNode(d){
@@ -243,7 +258,7 @@ require(["d3"], function(d3) {
             d3.select('#stateRect').remove();
             };
     
-    //functions to define link paths
+    //function to define link path 1.0
     function curvepath1(d){
             var dx = d.target.x - d.source.x,
                 dy = d.target.y - d.source.y,
@@ -251,7 +266,8 @@ require(["d3"], function(d3) {
             return "M" + d.source.x + "," + d.source.y + "A" + dr + "," 
                        + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
             };
-            
+
+    //function to define link path 2.0
     function curvepath2(d){
             if (d.source == d.target) {
                var xRotation = -45,
@@ -295,8 +311,23 @@ require(["d3"], function(d3) {
                                   zoom.transform, d3.zoomIdentity
                                       .translate(translateX, translateY)
                                       .scale(scale)
-                        );
+                                );
     }lapsedZoomFit();
+    
+    //setting toggle zoom button
+    var zoomEnabled;
+    var zoomToggle = d3.select('.zoomToggle').on('click', toggleZoom);
+    toggleZoom();
+
+    function toggleZoom(){
+        zoomEnabled = !zoomEnabled;
+        if (zoomEnabled) {
+            svg.call(zoom);
+        } else {
+            svg.on('.zoom', null);
+        }
+    zoomToggle.node().innerText = 'Zoom is ' + (zoomEnabled ? 'enabled' : 'disabled');
+    }; 
 
     //return svg.node();
 });
