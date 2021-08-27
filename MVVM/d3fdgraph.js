@@ -22,10 +22,14 @@ require(["d3"], function(d3) {
     const link_width_scale = %%linkwidthscale%%;
     // link charge
     const link_charge = %%linkcharge%%;
+    // matrix length
+    const matrixLength = %%matrixLength%%;
 
     // links and nodes data
-    const links = %%links%%;
-    const nodes = %%nodes%%; 
+    const linksData = %%links%%;
+    const nodesData = %%nodes%%; 
+    var links = linksData[0]; //initial data set selected
+    var nodes = nodesData[0]; //initial data set selected
     
     // boolean if zoom is disabled
     const zoomBoolean = %%zoomBoolean%%
@@ -41,20 +45,37 @@ require(["d3"], function(d3) {
         var types = Array.from(new Set(nodes.map(d => d.id))),
             color = d3.scaleOrdinal(types,d3.schemeCategory10);
     };
-
+    
+    // computing the positions of the nodes in all data sets
+    for (let i = 0; i < matrixLength; i++) {
     // create simulation
-    const simulation = d3.forceSimulation(nodes)
-                        .force("link", d3.forceLink().links(links).distance(d => link_distance-d.weight*150))
+    // **with all links computed (even with 0 probability)
+    const simulation = d3.forceSimulation(nodesData[i],d=>d.id)
+                        .force("link", d3.forceLink().links(linksData[i],d=>d.id)
+                               .distance(d => link_distance-d.weight*150)
+                               .strength(function(d){
+                                            if (d.weight<=0){return 0} //strength adjusted to 0 for 0 probabilities
+                                            else{return 1}}))
                         .force("charge", d3.forceManyBody().strength(link_charge))
                         .force('collision', d3.forceCollide().radius(collision_scale * node_radius))
                         .force("center", d3.forceCenter(width / 2, height / 2))
                         .stop();
+     
+    // **only links with !0 probability created
+//     const simulation = d3.forceSimulation(nodesData[i],d=>d.id)
+//                         .force("link", d3.forceLink().links(linksData[i],function(d) { return d.source.id + "-" + d.target.id; })
+//                                .distance(d => link_distance-d.weight*150))
+//                         .force("charge", d3.forceManyBody().strength(link_charge))
+//                         .force('collision', d3.forceCollide().radius(collision_scale * node_radius))
+//                         .force("center", d3.forceCenter(width / 2, height / 2))
+//                         .stop();
     
     // allow simulation to run
     simulation.tick(%%ticks%%);
-
+                    };
+    
     // define d3.zoom                
-    var zoom = d3.zoom()
+    const zoom = d3.zoom()
                  .extent([[0, 0], [width, height]])
                  .scaleExtent([0.2, 10])
                  .on("zoom", zoomed);
@@ -117,17 +138,21 @@ require(["d3"], function(d3) {
     
     
     // add links to svg element
-    const link = svg.append("g")
+    var link = svg.append("g")
             .attr("class", "links")
             .selectAll("path")
-            .data(links)
-            .enter().append("path")
-                .attr('stroke-width',d => 2+link_width_scale*d.weight)
+            .data(links,d=>d.id)
+            .enter().append("g");
+    
+    var path = link.append("path")
+                .attr('stroke-width',function(d){
+                    if (d.weight <= 0){return 0}
+                    else{return 2+link_width_scale*d.weight}}) //set width to 0 if link has 0 probability
                 .attr('opacity',0.3)
                 .attr('marker-end', markerType)
                 .attr('d',curvepath1)
                 .attr('d',curvepath2)
-                .attr('stroke', d => color(d.source.id))
+                .attr('stroke',d=>color(d.source.id))
                 .on('mouseover', motionInLink)
                 .on('mouseout', motionOutLink);
 
@@ -138,7 +163,7 @@ require(["d3"], function(d3) {
             .enter().append("g");
 
     // circular nodes
-    const circle = node.append("circle")
+    var circle = node.append("circle")
             .attr("r", node_radius)
             .attr('fill',d => color(d.id))
             .attr("cx", d => d.x)
@@ -155,10 +180,9 @@ require(["d3"], function(d3) {
             .text(d => d.id[0]);
 
     const image = node.append("svg:image") //set image on nodes if exist
+            .attr('class','images')
             .attr("xlink:href",d => d.image)
             .attr("id", d =>`image-${d.id}`)
-//             .attr("x", -10)
-//             .attr("y", -10)
             .attr("x", d => d.x-10)
             .attr("y", d => d.y-10)
             .attr("height", 20)
@@ -166,6 +190,7 @@ require(["d3"], function(d3) {
             .on('mouseover', motionInNode)
             .on('mouseout', motionOutNode);
     
+    // create a 'g' element for hovering elements
     const group = svg.append("g");
     
     //choosing marker types based on loop style
@@ -270,6 +295,7 @@ require(["d3"], function(d3) {
     
     //function to define link path 1.0
     function curvepath1(d){
+//             console.log(d.index,d.source.x);
             var dx = d.target.x - d.source.x,
                 dy = d.target.y - d.source.y,
                 dr = Math.sqrt(dx **2 + dy **2);
@@ -323,5 +349,65 @@ require(["d3"], function(d3) {
                                       .scale(scale)
                                 );
     }lapsedZoomFit();
-    //return svg.node();
+    
+    // update chart when slider is moved
+    d3.select("input[type=range]#dataSelect").on("input", function() {
+               var data;
+               data = this.value;
+               nodes = nodesData[data];
+               links = linksData[data];
+        
+               var newCircle = node.selectAll('circle')
+                   .data(nodes, function(d){
+//                    console.log(d)
+                   return d.id})
+                   .transition()
+                   .duration(800)
+                   .attr("cx", d => d.x)
+                   .attr("cy", d => d.y)
+            
+               var newText = node.selectAll('text')
+                   .data(nodes, d => d.id)
+                   .transition()
+                   .duration(800)
+                   .attr("x", d => d.x)
+                   .attr("y", d => d.y)
+        
+               var newImage = node.selectAll(".images") //because unable to select 'svg:image'
+                   .data(nodes, d => d.id)
+                   .transition()
+                   .duration(800)
+                   .attr("x", d => d.x-10)
+                   .attr("y", d => d.y-10)
+
+               var newLink = link.selectAll('path')
+                              .data(links,d=>d.id)
+               
+                   newLink.attr('d',curvepath1)
+                          .attr('d',curvepath2)
+                          .attr('stroke-width',function(d){
+                                               if (d.weight <= 0){return 0}
+                                               else{return 2+link_width_scale*d.weight}});
+      
+                   newLink.exit()
+                          .remove();
+
+               // - entering new elements not working properly
+               // - retained for future reference
+               // - problem: **loops over enter() array multiple times, creating duplicates
+//                var newPaths = link.selectAll('path')
+//                               .data(links,function(d) { return d.source.id + "-" + d.target.id; })
+//                       .enter()
+//                       .append("path")
+//                 .attr('stroke-width',d => 2+link_width_scale*d.weight)
+//                 .attr('opacity',0.3)
+//                 .attr('marker-end', markerType) 
+//                 .attr('d',curvepath1)
+//                 .attr('d',curvepath2)
+//                 .attr('stroke', d => color(d.source.id))
+//                 .on('mouseover', motionInLink)
+//                 .on('mouseout', motionOutLink);
+
+               d3.select("output#dataOutput").text("data set selected : " + data);
+    });
 });
