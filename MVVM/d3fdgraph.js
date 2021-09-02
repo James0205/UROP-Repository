@@ -40,18 +40,15 @@ require(["d3"], function(d3) {
 
     if (%%colourGiven%% == true){
         var types = Array.from(new Set(nodes.map(d => d.id))),
-            color = d3.scaleOrdinal(types,colourArray);
+            colour = d3.scaleOrdinal(types,colourArray);
     }else{
         var types = Array.from(new Set(nodes.map(d => d.id))),
-            color = d3.scaleOrdinal(types,d3.schemeCategory10);
+            colour = d3.scaleOrdinal(types,d3.schemeCategory10);
     };
-    
-    // computing the positions of the nodes in all data sets
-    for (let i = 0; i < matrixLength; i++) {
-    // create simulation
-    // **with all links computed (even with 0 probability)
-    const simulation = d3.forceSimulation(nodesData[i],d=>d.id)
-                        .force("link", d3.forceLink().links(linksData[i],d=>d.id)
+         
+    // **only links with none zero probability created
+    const simulation = d3.forceSimulation(nodesData[0],d=>d.id)
+                        .force("link", d3.forceLink().links(linksData[0],d=>d.id)
                                .distance(d => link_distance-d.weight*150)
                                .strength(function(d){
                                             if (d.weight<=0){return 0} //strength adjusted to 0 for 0 probabilities
@@ -60,22 +57,12 @@ require(["d3"], function(d3) {
                         .force('collision', d3.forceCollide().radius(collision_scale * node_radius))
                         .force("center", d3.forceCenter(width / 2, height / 2))
                         .stop();
-     
-    // **only links with !0 probability created
-//     const simulation = d3.forceSimulation(nodesData[i],d=>d.id)
-//                         .force("link", d3.forceLink().links(linksData[i],function(d) { return d.source.id + "-" + d.target.id; })
-//                                .distance(d => link_distance-d.weight*150))
-//                         .force("charge", d3.forceManyBody().strength(link_charge))
-//                         .force('collision', d3.forceCollide().radius(collision_scale * node_radius))
-//                         .force("center", d3.forceCenter(width / 2, height / 2))
-//                         .stop();
     
     // allow simulation to run
     simulation.tick(%%ticks%%);
-                    };
-    
+                        
     // define d3.zoom                
-    const zoom = d3.zoom()
+    var zoom = d3.zoom()
                  .extent([[0, 0], [width, height]])
                  .scaleExtent([0.2, 10])
                  .on("zoom", zoomed);
@@ -86,13 +73,12 @@ require(["d3"], function(d3) {
                     link.attr("transform",transform);
                     group.attr("transform",transform);
                     };
-            
+
     // select HTML element and attach SVG to it
     const svg = d3.select("#d3-container-%%unique-id%%")
         .append("svg")
         .attr("width", width)
-        .attr("height", height)
-        .call(zoom);
+        .attr("height", height);
     
     // setting zoom booleans to disable zoom
     if (zoomBoolean) {
@@ -119,7 +105,7 @@ require(["d3"], function(d3) {
                         .attr("markerHeight", 3)
                         .attr("orient", "auto-start-reverse")
                         .append("path")
-                        .attr("fill", color)
+                        .attr("fill", colour)
                         .attr("d", "M0,-10L20,0L0,10");
        
     //for self loops
@@ -133,52 +119,56 @@ require(["d3"], function(d3) {
                         .attr("markerHeight", 3)
                         .attr("orient", "auto-start-reverse")
                       .append("path")
-                        .attr("fill", color)
+                        .attr("fill", colour)
                         .attr("d", "M0,-10L20,0L0,10"); 
     
     
     // add links to svg element
-    var link = svg.append("g")
+    const link = svg.append("g")
             .attr("class", "links")
-            .selectAll("path")
-            .data(links,d=>d.id)
+            .selectAll(".connections")
+            .data(links,d=> d.id)
             .enter().append("g");
     
-    var path = link.append("path")
+    // create visual links
+    const path = link.append("path")
+                .attr('class','connections')
                 .attr('stroke-width',function(d){
                     if (d.weight <= 0){return 0}
                     else{return 2+link_width_scale*d.weight}}) //set width to 0 if link has 0 probability
                 .attr('opacity',0.3)
                 .attr('marker-end', markerType)
-                .attr('d',curvepath1)
-                .attr('d',curvepath2)
-                .attr('stroke',d=>color(d.source.id))
+                .attr('d',curvepath)
+                .attr('d',shortenedpath)
+                .attr('stroke',d=>colour(d.source.id))
                 .on('mouseover', motionInLink)
                 .on('mouseout', motionOutLink);
 
+    // add nodes to svg element
     const node = svg.append("g")
             .attr("class", "nodes")
             .selectAll("g")
             .data(nodes)
             .enter().append("g");
 
-    // circular nodes
+    // create circular nodes
     var circle = node.append("circle")
             .attr("r", node_radius)
-            .attr('fill',d => color(d.id))
+            .attr('fill',d => colour(d.id))
             .attr("cx", d => d.x)
             .attr("cy", d => d.y)
             .on('mouseover', motionInNode)
             .on('mouseout', motionOutNode);
 
-    // svg text labels for each node
+    // create svg text labels for each node
     const text = node.append("text")
             .attr("dx", -3.5)
             .attr("dy", 3.5)
             .attr("x", d => d.x)
             .attr("y", d => d.y)
             .text(d => d.id[0]);
-
+    
+    // add images to nodes if given
     const image = node.append("svg:image") //set image on nodes if exist
             .attr('class','images')
             .attr("xlink:href",d => d.image)
@@ -192,7 +182,7 @@ require(["d3"], function(d3) {
     
     // create a 'g' element for hovering elements
     const group = svg.append("g");
-    
+
     //choosing marker types based on loop style
     function markerType(d){ //set different marker for self loop
             if (d.source == d.target) {
@@ -206,6 +196,7 @@ require(["d3"], function(d3) {
             var dxx = 0,probability = 0,
                 dyy = 0,length = 0;
                 
+            // enlarge link when hovering
             d3.select(this).transition()
                            .attr('opacity', function(d){
                                 probability = Math.round((d.weight + Number.EPSILON) * 100) / 100
@@ -218,6 +209,7 @@ require(["d3"], function(d3) {
                                    }return 1})
                            .attr('stroke-width',2+link_width_scale);
 
+            // hover text box
             group.append("rect")
                .attr("rx", 6)
                .attr("ry", 6)
@@ -229,6 +221,7 @@ require(["d3"], function(d3) {
                .attr('x',dxx-length/2)
                .attr('y',dyy)
 
+            // hover text
             group.append("text")
                .attr("id", 'probabilityshow')
                .attr('font-size',15)
@@ -253,6 +246,7 @@ require(["d3"], function(d3) {
             var name = "", length = 0,
                 locx = 0 , locy = 0;
                 
+            // adjust image position if given
             d3.select(this).transition()
               .attr("x",d=>d.x-15)
               .attr("y",d=>d.y-15)
@@ -261,7 +255,8 @@ require(["d3"], function(d3) {
                   name = d.id, locx = d.x, locy = d.y
                   length = 10+10*d.id.length
                   return 30});
-                                                 
+            
+            // hover text box
             group.append("rect")
                .attr("rx", 6)
                .attr("ry", 6)
@@ -273,6 +268,7 @@ require(["d3"], function(d3) {
                .attr('x',locx-length/2)
                .attr('y',locy+22)
 
+            // hover text
             group.append("text")
                .attr("id", 'stateshow')
                .attr('font-size',15)
@@ -284,17 +280,20 @@ require(["d3"], function(d3) {
                };
         
     function motionOutNode(d) {
+            // adjust image position if given
             d3.select(this).transition()
                            .attr("x",d=>d.x-10)
                            .attr("y",d=>d.y-10)
                            .attr('height',20)
                            .attr('width',20);
+        
+            // remove text and text box
             d3.select('#stateshow').remove();
             d3.select('#stateRect').remove();
             };
     
-    //function to define link path 1.0
-    function curvepath1(d){
+    //function to define curved link path
+    function curvepath(d){
 //             console.log(d.index,d.source.x);
             var dx = d.target.x - d.source.x,
                 dy = d.target.y - d.source.y,
@@ -304,7 +303,7 @@ require(["d3"], function(d3) {
             };
 
     //function to define link path 2.0
-    function curvepath2(d){
+    function shortenedpath(d){
             if (d.source == d.target) {
                var xRotation = -45,
                    largeArc = 1,
@@ -334,7 +333,7 @@ require(["d3"], function(d3) {
                return "M" + m2.x + "," + m2.y + "A" + dr + "," +
                       dr + " 0 0,1 " + m.x + "," + m.y;
                }};
-    
+        
     //setting initial zoom level
     function lapsedZoomFit() {
                var bounds = svg.node().getBBox(),
@@ -348,8 +347,11 @@ require(["d3"], function(d3) {
                                       .translate(translateX, translateY)
                                       .scale(scale)
                                 );
-    }lapsedZoomFit();
+    }
     
+    // call zoom to fit upon initialisation
+    lapsedZoomFit();
+
     // update chart when slider is moved
     d3.select("input[type=range]#dataSelect").on("input", function() {
                var data;
@@ -357,15 +359,32 @@ require(["d3"], function(d3) {
                nodes = nodesData[data];
                links = linksData[data];
         
+               // compute positions if fresh data is selected
+               if (nodesData[data][0].x == undefined){
+                    const newSimulation = d3.forceSimulation(nodes,d=>d.id)
+                        .force("link", d3.forceLink().links(links,d=>d.id)
+                               .distance(d => link_distance-d.weight*150)
+                               .strength(function(d){
+                                            if (d.weight<=0){return 0} //strength adjusted to 0 for 0 probabilities
+                                            else{return 1}}))
+                        .force("charge", d3.forceManyBody().strength(link_charge))
+                        .force('collision', d3.forceCollide().radius(collision_scale * node_radius))
+                        .force("center", d3.forceCenter(width / 2, height / 2))
+                        .stop();
+    
+                    // allow simulation to run
+                    newSimulation.tick(%%ticks%%);                                    
+               };
+        
+               // update position of circles
                var newCircle = node.selectAll('circle')
-                   .data(nodes, function(d){
-//                    console.log(d)
-                   return d.id})
+                   .data(nodes, d=>d.id)
                    .transition()
                    .duration(800)
                    .attr("cx", d => d.x)
                    .attr("cy", d => d.y)
             
+               // update position of texts
                var newText = node.selectAll('text')
                    .data(nodes, d => d.id)
                    .transition()
@@ -373,6 +392,7 @@ require(["d3"], function(d3) {
                    .attr("x", d => d.x)
                    .attr("y", d => d.y)
         
+               // update position of images
                var newImage = node.selectAll(".images") //because unable to select 'svg:image'
                    .data(nodes, d => d.id)
                    .transition()
@@ -380,34 +400,16 @@ require(["d3"], function(d3) {
                    .attr("x", d => d.x-10)
                    .attr("y", d => d.y-10)
 
-               var newLink = link.selectAll('path')
-                              .data(links,d=>d.id)
-               
-                   newLink.attr('d',curvepath1)
-                          .attr('d',curvepath2)
+               // update position of links
+               var updateLink = d3.selectAll('.connections') //selectAll class doesnt work
+                               .data(links,d=>d.id)
+
+               updateLink.attr('d',curvepath)
+                          .attr('d',shortenedpath)
                           .attr('stroke-width',function(d){
                                                if (d.weight <= 0){return 0}
-                                               else{return 2+link_width_scale*d.weight}});
-      
-                   newLink.exit()
-                          .remove();
-
-               // - entering new elements not working properly
-               // - retained for future reference
-               // - problem: **loops over enter() array multiple times, creating duplicates
-//                var newPaths = link.selectAll('path')
-//                               .data(links,function(d) { return d.source.id + "-" + d.target.id; })
-//                       .enter()
-//                       .append("path")
-//                 .attr('stroke-width',d => 2+link_width_scale*d.weight)
-//                 .attr('opacity',0.3)
-//                 .attr('marker-end', markerType) 
-//                 .attr('d',curvepath1)
-//                 .attr('d',curvepath2)
-//                 .attr('stroke', d => color(d.source.id))
-//                 .on('mouseover', motionInLink)
-//                 .on('mouseout', motionOutLink);
-
+                                               else{return 2+link_width_scale*d.weight}});            
+        
+               // update slider text
                d3.select("output#dataOutput").text("data set selected : " + data);
     });
-});
