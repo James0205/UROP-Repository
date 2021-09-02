@@ -167,10 +167,6 @@ def linksCalibration(transitionMatrix):
         links[k]=[]
         for j in range(lengthMatrix):
             for i in range(lengthMatrix):
-                if transitionMatrix[k][j][i] != 0:
-                    links[k].append({"source": i,"target": j,"id": str(i)+str(j),
-                                     "weight": transitionMatrix[k][j][i]})
-                else:
-                    # negative weight to repel from other elements if probability = 0
-                    links[k].append({"source": i,"target": j,"id": str(i)+str(j),"weight": -1})
+                links[k].append({"source": i,"target": j,"id": str(i)+str(j),
+                                 "weight": transitionMatrix[k][j][i]})
     return links
