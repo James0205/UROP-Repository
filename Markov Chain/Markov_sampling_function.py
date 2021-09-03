@@ -1,7 +1,4 @@
 import numpy as np
-import random
-import json
-
 
 def sample(states_num: int = 4,
                        transition_prob: float = None,
