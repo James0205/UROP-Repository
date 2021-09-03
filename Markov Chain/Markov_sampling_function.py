@@ -32,11 +32,6 @@ def sample(states_num: int = 4,
     
     If unspecified, default parameters as shown.
     Transition probability matrix is randomly generated.
-    
-    The negative_noise paramater is the minimum value
-    of each column of the sample_prob matrix. If it is 
-    negative, the minimum value of the column is negated
-    and added to the entire column and normalised
     """
     rng = np.random.default_rng(seed)
     if type(transition_prob)==type(None):
@@ -52,14 +47,3 @@ def sample(states_num: int = 4,
 def softmax(x):
     """Compute softmax values for each sets of scores in x."""
     return np.exp(x) / np.sum(np.exp(x), axis=0)
- 
-
-# Save matrix into a json file
-data = np.ndarray.tolist(np.matrix.transpose(sample()))
-with open('data.json', 'w') as outfile:
-    json.dump(data, outfile)
-
-
-
-
-
