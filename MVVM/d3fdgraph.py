@@ -1,17 +1,17 @@
-from IPython.display import display, Javascript, HTML, clear_output
+from IPython.display import display, Javascript, HTML
 from pathlib import Path
 import IPython.core.display
 import numpy as np
 import string
 import json
 import uuid
-    
-def plot_force_directed_graph(transitionMatrix: dict = None, state_name=None, image=None, colour=None, zoom=True, **kwargs):
+
+def plot_force_directed_graph(data_set: list = None, state_name=None, image=None, colour=None, zoom=True, **kwargs):
     """[summary]
     Parameters
     ----------
-    transitionMatrix : dict, required
-        [description], by default float = None
+    data_set : list, required
+        [description], by default list = None
     state_name : list, optional
         [description], by default None
     image : list, optional
@@ -35,17 +35,24 @@ def plot_force_directed_graph(transitionMatrix: dict = None, state_name=None, im
     uid = str(uuid.uuid4())
     
     # compute size of matrix data set
-    matrixLength = len(transitionMatrix)
+    dataLength = len(data_set)
 
     # load html template file
-    html = Path('d3fdgraph.html').read_text().replace('%%unique-id%%', uid).replace('%%matrixLength%%', str(matrixLength-1))
+    html = Path('d3fdgraph.html').read_text().replace('%%unique-id%%', uid).replace('%%dataLength%%', str(dataLength-1))
 
-    # convert graph nodes and links to json, ready for d3
-    json_nodes = json.dumps(nodesCalibration(transitionMatrix,state_name,image))
-    json_links = json.dumps(linksCalibration(transitionMatrix))
+    # convert graph nodes, links and list of dates to json, ready for d3
+    json_nodes = json.dumps(nodesCalibration(data_set,state_name,image))
+    json_links = json.dumps(linksCalibration(data_set))
+    json_dates = json.dumps(date_list(data_set))
     
     # convert zoom boolean into json format
     zoomBoolean = json.dumps(zoom)
+    
+    # if image is given, change variable to true
+    imageGiven = False
+    if type(image) != type(None):
+        imageGiven = True
+    imageGiven = json.dumps(imageGiven)
     
     # if colour is given, change variable to true
     colourGiven = False
@@ -64,10 +71,12 @@ def plot_force_directed_graph(transitionMatrix: dict = None, state_name=None, im
                  'collisionscale': 4,
                  'linkwidthscale': 4,
                  'ticks': 200,
-                 'matrixLength':matrixLength,
+                 'dataLength':dataLength,
                  'nodes': json_nodes,
                  'links': json_links,
+                 'date_list':json_dates,
                  'zoomBoolean': zoomBoolean,
+                 'imageGiven': imageGiven,
                  'colourGiven': colourGiven,
                  'colourArray': colourArray}
 
@@ -107,11 +116,11 @@ def create_d3_fdgraph(uid, config):
 
     return js_code
 
-def nodesCalibration(transitionMatrix, state_name, image):
+def nodesCalibration(data_set, state_name, image):
     """[summary]
     Parameters
     ----------
-    transitionMatrix : dict, required
+    data_set : list, required
     state_name : list, optional
     image : list, optional
         
@@ -125,29 +134,29 @@ def nodesCalibration(transitionMatrix, state_name, image):
     Computes the nodes of the network graph
     
     """
-    lengthMatrix = len(transitionMatrix[0])
-    lengthDict = len(transitionMatrix)
+    matrixLength = len(data_set[0][1])
+    dataLength = len(data_set)
     
     # if state_name is not given, returns a list of alphabets
     if type(state_name) == type(None):
-        state_name = string.ascii_uppercase[:lengthMatrix]
+        state_name = string.ascii_uppercase[:matrixLength]
         
     # if image is not given, returns a list of Nones
     if  type(image) == type(None):
-        image = [None]*lengthMatrix
+        image = [None]*matrixLength
         
     nodes = {}
-    for i in range(lengthDict):
+    for i in range(dataLength):
         nodes[i]=[]
-        for j in range(lengthMatrix):
-            nodes[i].append({"id":state_name[j],"index":j,"image":image[j]})
+        for j in range(matrixLength):
+            nodes[i].append({"id":state_name[j],"image":image[j]})
     return nodes
 
-def linksCalibration(transitionMatrix):
+def linksCalibration(data_set):
     """[summary]
     Parameters
     ----------
-    transitionMatrix : dict, required
+    data_set : list, required
         
     Returns
     -------
@@ -159,14 +168,37 @@ def linksCalibration(transitionMatrix):
     Computes the links of the network graph
     
     """
-    lengthDict = len(transitionMatrix)
-    lengthMatrix = len(transitionMatrix[0])
+    dataLength = len(data_set)
+    matrixLength = len(data_set[0][1])
     links = {}
     
-    for k in range(lengthDict):
+    for k in range(dataLength):
         links[k]=[]
-        for j in range(lengthMatrix):
-            for i in range(lengthMatrix):
+        for j in range(matrixLength):
+            for i in range(matrixLength):
                 links[k].append({"source": i,"target": j,"id": str(i)+str(j),
-                                 "weight": transitionMatrix[k][j][i]})
+                                 "weight": data_set[k][1][j][i]})
     return links
+
+def date_list(data_set):
+    """[summary]
+    Parameters
+    ----------
+    data_set : list, required
+        
+    Returns
+    -------
+    [type]
+        [description], a dictionary of lists of links with attributes
+    
+    Functions
+    ---------
+    Computes the links of the network graph
+    
+    """
+    date_list = []
+    dataLength = len(data_set)
+    for data in data_set:
+        date_list.append(data[0])
+    
+    return date_list
