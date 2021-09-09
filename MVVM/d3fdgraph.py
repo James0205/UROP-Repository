@@ -6,7 +6,7 @@ import string
 import json
 import uuid
 
-def plot_force_directed_graph(data_set: list = None, state_name=None, image=None, colour=None, zoom=True, **kwargs):
+def plot_force_directed_graph(data_set: list = None, state_name=None, image=None, colour=None, zoom=True, coordinates=None, **kwargs):
     """[summary]
     Parameters
     ----------
@@ -48,19 +48,11 @@ def plot_force_directed_graph(data_set: list = None, state_name=None, image=None
     # convert zoom boolean into json format
     zoomBoolean = json.dumps(zoom)
     
-    # if image is given, change variable to true
-    imageGiven = False
-    if type(image) != type(None):
-        imageGiven = True
-    imageGiven = json.dumps(imageGiven)
+    # convert colour array to json
+    colourArray = json.dumps(colour)
     
-    # if colour is given, change variable to true
-    colourGiven = False
-    colourArray = colour
-    if type(colour) != type(None):
-        colourGiven = True
-    colourGiven = json.dumps(colourGiven)
-    colourArray = json.dumps(colourArray)
+    # convert coordinates array to json
+    coordinates = json.dumps(coordinates)
     
     # Use different adjustable configuration values
     config =    {'width': 1000,
@@ -76,9 +68,8 @@ def plot_force_directed_graph(data_set: list = None, state_name=None, image=None
                  'links': json_links,
                  'date_list':json_dates,
                  'zoomBoolean': zoomBoolean,
-                 'imageGiven': imageGiven,
-                 'colourGiven': colourGiven,
-                 'colourArray': colourArray}
+                 'colourArray': colourArray,
+                 'coordinates': coordinates}
 
     config.update(kwargs)
     js_code = create_d3_fdgraph(uid, config)
