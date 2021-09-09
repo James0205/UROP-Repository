@@ -1,34 +1,36 @@
 <script src="/static/components/requirejs/require.js"></script>
+
 <div id="d3-container-%%unique-id%%"></div>
 
 <style>
     .links path {
         fill: none;
     }
-    .nodes circle {
+    .nodes rect {
         pointer-events: all;
         stroke: #fff;
-        stroke-width: 2px;
-        opacity: 1.0;
-    }
-    .nodes rectangle {
-        pointer-events: all;
-        stroke: #fff;
-        stroke-width: 2px;
+        stroke-width: 1px;
         opacity: 1.0;
     }
     .nodes text {
         pointer-events: none;
         font: 8px sans-serif;
         fill: #fff;
-/*         fill:#000000 */
         stroke-width: 0.6px;
         opacity: 1.0;
     }
 </style>
+
+<button id="saveButton">Save SVG</button>
 
 <p>Data Select:
 <input type="range" min="0", max="%%dataLength%%", step="1", value="0" id="dataSelect"/>
 <output id="dataIndexOutput"></output>
 <output id="dataDateOutput"></output>
 </p>
+
+<p>Link Pruning Threshold:
+<input type="range" min="0", max="1", step="0.01", value="0" id="linkThreshold"/>
+<output id="linkThresholdOutput">0</output>
+</p>
+
