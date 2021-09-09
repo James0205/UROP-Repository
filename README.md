@@ -17,3 +17,4 @@ Input Parameters
 3. Optional: Images for Nodes
 4. Optional: Colour for Nodes
 5. Optional: Zoom Boolean (To enable or disable)
+6. Optional: Coordinates (Predefine node positions)
