@@ -2,6 +2,21 @@ import pandas as pd
 import numpy as np
 
 def data_sorter(file,subject):
+    """[summary]
+    Parameters
+    ----------
+    file : csv file, required
+    subject : string, required
+        
+    Returns
+    -------
+    [type] list of lists
+        [description], list of pairs of date and transition matrix
+    
+    Functions
+    ---------    
+    Converting csv files into the correct formats for plotting function
+    """
     # Read file and produce data frame for intended subject only
     df = pd.read_csv(file) 
     df = df.loc[df['subject'] == subject]
@@ -43,6 +58,20 @@ def data_sorter(file,subject):
     return data_set
 
 def subject_list(file):
+    """[summary]
+    Parameters
+    ----------
+    file : csv file, required
+        
+    Returns
+    -------
+    [type] list
+        [description], list of subjects
+    
+    Functions
+    ---------    
+    Produce a list of subjects
+    """
     # Read file to make dataframe
     df = pd.read_csv(file) 
     
@@ -55,6 +84,21 @@ def subject_list(file):
     return states_list
 
 def state_name(file,subject):
+    """[summary]
+    Parameters
+    ----------
+    file : csv file, required
+    subject : string, required
+        
+    Returns
+    -------
+    [type] list
+        [description], list of state names
+    
+    Functions
+    ---------    
+    Produce a list of state names
+    """
     # Read file to make dataframe
     df = pd.read_csv(file) 
     df = df.loc[df['subject'] == subject]
