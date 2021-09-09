@@ -12,7 +12,7 @@ A sample matrix generator is provided in the sampleMatrix.py file.
 
 Input Parameters
 =========
-1. Dictionary of transition matrices
+1. List of transition matrices and dates pair
 2. Optional: State Names
 3. Optional: Images for Nodes
 4. Optional: Colour for Nodes
