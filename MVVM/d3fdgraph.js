@@ -1,11 +1,11 @@
 // require is how jupyter manages javascript libraries
 require.config({
     paths: {
-        d3: 'https://d3js.org/d3.v6.min'
+        d3: 'https://d3js.org/d3.v6.min',
     }
 });
 
-require(["d3"], function(d3) {
+require(["d3",'save-svg-as-png'], function(d3,saveSvgAsPng) {
     //console.log(d3.version);
 
     // size of plot
@@ -22,32 +22,36 @@ require(["d3"], function(d3) {
     const link_width_scale = %%linkwidthscale%%;
     // link charge
     const link_charge = %%linkcharge%%;
-    // matrix length
-    const matrixLength = %%matrixLength%%;
 
-    // links and nodes data
+    // links, nodes and dates data
     const linksData = %%links%%;
-    const nodesData = %%nodes%%; 
-    var links = linksData[0]; //initial data set selected
-    var nodes = nodesData[0]; //initial data set selected
+    const nodesData = %%nodes%%;
+    const date_list = %%date_list%%;
     
+    //initial data set selected
+    var links = linksData[0]; 
+    var nodes = nodesData[0];
+
     // boolean if zoom is disabled
-    const zoomBoolean = %%zoomBoolean%%
+    const zoomBoolean = %%zoomBoolean%%;
     
-    // boolean if colour is given
-    const colourGiven = %%colourGiven%%;
+    // define colour
     const colourArray = %%colourArray%%;
 
-    if (%%colourGiven%% == true){
-        var types = Array.from(new Set(nodes.map(d => d.id))),
-            colour = d3.scaleOrdinal(types,colourArray);
-    }else{
+    if (colourArray == null){
         var types = Array.from(new Set(nodes.map(d => d.id))),
             colour = d3.scaleOrdinal(types,d3.schemeCategory10);
+    }else{
+        var types = Array.from(new Set(nodes.map(d => d.id))),
+            colour = d3.scaleOrdinal(types,colourArray);
     };
          
-    // **only links with none zero probability created
-    const simulation = d3.forceSimulation(nodesData[0],d=>d.id)
+    // define coordinates array
+    const coordinates = %%coordinates%%;
+    
+    // run simulation to append positions onto nodes if coordinates not given
+    if (coordinates == null){
+        const simulation = d3.forceSimulation(nodesData[0],d=>d.id)
                         .force("link", d3.forceLink().links(linksData[0],d=>d.id)
                                .distance(d => link_distance-d.weight*150)
                                .strength(function(d){
@@ -58,27 +62,41 @@ require(["d3"], function(d3) {
                         .force("center", d3.forceCenter(width / 2, height / 2))
                         .stop();
     
-    // allow simulation to run
-    simulation.tick(%%ticks%%);
-                        
+        // allow simulation to run for set duration
+        simulation.tick(%%ticks%%);
+    }else{
+        // append positions if coordinates given
+        for (let i = 0; i < nodes.length; i++) {
+                  nodes[i].x = coordinates[i][0];
+                  nodes[i].y = coordinates[i][1];
+                }
+            
+        // update link sources and targets
+        for (let i = 0; i < links.length; i++) {
+                  links[i].source = nodes[links[i].source];
+                  links[i].target = nodes[links[i].target];
+                }
+        }
+                    
+    // select HTML element and attach SVG to it
+    const svg = d3.select("#d3-container-%%unique-id%%")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .attr("id","SVG");     
+    
     // define d3.zoom                
-    var zoom = d3.zoom()
+    const zoom = d3.zoom()
                  .extent([[0, 0], [width, height]])
                  .scaleExtent([0.2, 10])
                  .on("zoom", zoomed);
     
-            //set zoom for model
+    //set zoom for model
     function zoomed({transform}) {
                     node.attr("transform",transform); 
                     link.attr("transform",transform);
                     group.attr("transform",transform);
                     };
-
-    // select HTML element and attach SVG to it
-    const svg = d3.select("#d3-container-%%unique-id%%")
-        .append("svg")
-        .attr("width", width)
-        .attr("height", height);
     
     // setting zoom booleans to disable zoom
     if (zoomBoolean) {
@@ -87,15 +105,15 @@ require(["d3"], function(d3) {
             svg.on('.zoom', null);
         }
     
+    // <ARROWS> //
     // add arrow marker to links
-    const arrows = svg.attr("class", "arrow")
-                        .selectAll('.arrows') //set arrow marker
+    const arrows = svg.selectAll('.arrows') //set arrow marker
                         .data(types)
-                        .enter()
-                        .append("g")
+                        .enter();
          
     //for loops away from self
     const arrow_away = arrows.append("defs")
+                       .attr("class", "arrow")
                        .append("marker")
                         .attr("id", d => `arrow-${d}`)
                         .attr("viewBox", "0 -10 20 20")
@@ -110,6 +128,7 @@ require(["d3"], function(d3) {
        
     //for self loops
     const arrow_self = arrows.append("defs")
+                       .attr("class", "arrow")
                        .append("marker")
                         .attr("id", d =>`arrow2-${d}`)
                         .attr("viewBox", "0 -10 20 20")
@@ -121,7 +140,11 @@ require(["d3"], function(d3) {
                       .append("path")
                         .attr("fill", colour)
                         .attr("d", "M0,-10L20,0L0,10"); 
-    
+    // <ARROWS END> //
+
+    // <LINKS> //
+    // set threshold for links
+    var threshold = 0;
     
     // add links to svg element
     const link = svg.append("g")
@@ -131,10 +154,11 @@ require(["d3"], function(d3) {
             .enter().append("g");
     
     // create visual links
-    const path = link.append("path")
+    var path = link.append("path")
                 .attr('class','connections')
+                .attr('id',d=>d.source.id+"path")
                 .attr('stroke-width',function(d){
-                    if (d.weight <= 0){return 0}
+                    if (d.weight <= threshold){return 0}
                     else{return 2+link_width_scale*d.weight}}) //set width to 0 if link has 0 probability
                 .attr('opacity',0.3)
                 .attr('marker-end', markerType)
@@ -143,45 +167,6 @@ require(["d3"], function(d3) {
                 .attr('stroke',d=>colour(d.source.id))
                 .on('mouseover', motionInLink)
                 .on('mouseout', motionOutLink);
-
-    // add nodes to svg element
-    const node = svg.append("g")
-            .attr("class", "nodes")
-            .selectAll("g")
-            .data(nodes)
-            .enter().append("g");
-
-    // create circular nodes
-    var circle = node.append("circle")
-            .attr("r", node_radius)
-            .attr('fill',d => colour(d.id))
-            .attr("cx", d => d.x)
-            .attr("cy", d => d.y)
-            .on('mouseover', motionInNode)
-            .on('mouseout', motionOutNode);
-
-    // create svg text labels for each node
-    const text = node.append("text")
-            .attr("dx", -3.5)
-            .attr("dy", 3.5)
-            .attr("x", d => d.x)
-            .attr("y", d => d.y)
-            .text(d => d.id[0]);
-    
-    // add images to nodes if given
-    const image = node.append("svg:image") //set image on nodes if exist
-            .attr('class','images')
-            .attr("xlink:href",d => d.image)
-            .attr("id", d =>`image-${d.id}`)
-            .attr("x", d => d.x-10)
-            .attr("y", d => d.y-10)
-            .attr("height", 20)
-            .attr("width", 20)
-            .on('mouseover', motionInNode)
-            .on('mouseout', motionOutNode);
-    
-    // create a 'g' element for hovering elements
-    const group = svg.append("g");
 
     //choosing marker types based on loop style
     function markerType(d){ //set different marker for self loop
@@ -201,12 +186,12 @@ require(["d3"], function(d3) {
                            .attr('opacity', function(d){
                                 probability = Math.round((d.weight + Number.EPSILON) * 100) / 100
                                 length = 10 + 8 * probability.toString().length
+                                
                                 if(d.source == d.target){ //set position arguments
                                    dxx = ((d.source.x+d.target.x)/2)+40
                                    dyy = ((d.source.y+d.target.y)/2)-40}else{
                                    dxx = (d.source.x+d.target.x)/2
-                                   dyy = (d.source.y+d.target.y)/2-10  
-                                   }return 1})
+                                   dyy = (d.source.y+d.target.y)/2-10}return 1})
                            .attr('stroke-width',2+link_width_scale);
 
             // hover text box
@@ -241,60 +226,8 @@ require(["d3"], function(d3) {
             d3.select('#indicatorRect').remove();
             };
     
-    //hover animation for Nodes
-    function motionInNode(d){
-            var name = "", length = 0,
-                locx = 0 , locy = 0;
-                
-            // adjust image position if given
-            d3.select(this).transition()
-              .attr("x",d=>d.x-15)
-              .attr("y",d=>d.y-15)
-              .attr('width',30)
-              .attr('height',function(d){
-                  name = d.id, locx = d.x, locy = d.y
-                  length = 10+10*d.id.length
-                  return 30});
-            
-            // hover text box
-            group.append("rect")
-               .attr("rx", 6)
-               .attr("ry", 6)
-               .attr('height',20)
-               .attr('width',length)
-               .attr('id','stateRect')
-               .attr('fill','black')
-               .attr('opacity',0.5)
-               .attr('x',locx-length/2)
-               .attr('y',locy+22)
-
-            // hover text
-            group.append("text")
-               .attr("id", 'stateshow')
-               .attr('font-size',15)
-               .attr('fill','white')
-               .attr('x',locx)
-               .attr('y',locy+37.5)
-               .attr('text-anchor','middle')
-               .text(name)
-               };
-        
-    function motionOutNode(d) {
-            // adjust image position if given
-            d3.select(this).transition()
-                           .attr("x",d=>d.x-10)
-                           .attr("y",d=>d.y-10)
-                           .attr('height',20)
-                           .attr('width',20);
-        
-            // remove text and text box
-            d3.select('#stateshow').remove();
-            d3.select('#stateRect').remove();
-            };
-    
     //function to define curved link path
     function curvepath(d){
-//             console.log(d.index,d.source.x);
             var dx = d.target.x - d.source.x,
                 dy = d.target.y - d.source.y,
                 dr = Math.sqrt(dx **2 + dy **2);
@@ -333,8 +266,184 @@ require(["d3"], function(d3) {
                return "M" + m2.x + "," + m2.y + "A" + dr + "," +
                       dr + " 0 0,1 " + m.x + "," + m.y;
                }};
+    // <LINKS END> //
+    
+    // <NODES> //
+    
+    // add nodes to svg element
+    const node = svg.append("g")
+            .attr("class", "nodes")
+            .selectAll("g")
+            .data(nodes)
+            .enter().append("g");
+
+    if (nodes[0].image == null){
+        // add images to nodes if given
+        var rectangles = node.append("rect")
+               .attr("rx", 6)
+               .attr("ry", 6)
+               .attr('height',15)
+               .attr('width',d=>5*d.id.length)
+               .attr('fill',d=>colour(d.id))
+               .attr('x',d=>d.x-(5*d.id.length)/2)
+               .attr('y',d=>d.y-7)
+               .on('mouseover', motionInNode)
+               .on('mouseout', motionOutNode);
         
-    //setting initial zoom level
+        const text = node.append("text")
+            .attr("dx", 0)
+            .attr("dy", 3.5)
+            .attr('text-anchor','middle')
+            .attr("x", d => d.x)
+            .attr("y", d => d.y)
+            .text(d => d.id);
+    }else{
+        var image = node.append("svg:image") //set image on nodes if exist
+            .attr('class','images')
+            .attr("xlink:href",d => d.image)
+            .attr("id", d =>`image-${d.id}`)
+            .attr("x", d => d.x-10)
+            .attr("y", d => d.y-10)
+            .attr("height", 20)
+            .attr("width", 20)
+            .on('mouseover', motionInImage)
+            .on('mouseout', motionOutImage);
+    }
+    
+    //hover in animation for Nodes
+    function motionInNode(d){
+            var name,locx,locy;
+            var targets = [],strength = [];
+                
+            // adjust image position if given
+            d3.select(this).transition()
+              .attr('height',function(d){
+                  name = d.id, locx = d.x, locy = d.y
+                  return 15});
+            hover_in(name,targets,strength,locx,locy);
+            };
+    
+    //hover out animation for Nodes   
+    function motionOutNode(d) {
+            var  name;
+            d3.select(this).transition()
+              .attr('height',function(d){
+                  name = d.id;
+                  return 15});
+            
+            // remove text and text box
+            d3.selectAll('.stateshow').remove();
+            d3.select('#stateRect').remove();
+        
+            // rescale path to normal size
+            d3.selectAll("#"+name+"path")
+              .transition()
+              .duration(200)
+              .attr('opacity',0.3)
+              .attr('stroke-width',function(d){
+                                   if (d.weight <= threshold){return 0}
+                                   else{return 2+link_width_scale*d.weight}})
+            };
+    
+    //hover in animation for Images
+    function motionInImage(d){
+            var name,locx,locy;
+            var targets = [],strength = [];
+                
+            // adjust image position if given
+            d3.select(this).transition()
+              .attr("x",d=>d.x-15)
+              .attr("y",d=>d.y-15)
+              .attr('width',30)
+              .attr('height',function(d){
+                  name = d.id, locx = d.x, locy = d.y
+                  return 30});
+            
+            hover_in(name,targets,strength,locx,locy);
+            };
+    
+    //hover out animation for Images
+    function motionOutImage(d) {
+            var name;
+            // adjust image position if given
+            d3.select(this).transition()
+                           .attr("x",d=>d.x-10)
+                           .attr("y",d=>d.y-10)
+                           .attr('height',function(d){
+                                name = d.id
+                            return 20})
+                           .attr('width',20);
+        
+            // remove text and text box
+            d3.selectAll('.stateshow').remove();
+            d3.select('#stateRect').remove();
+        
+            // rescale path to normal size
+            d3.selectAll("#"+name+"path")
+              .transition()
+              .duration(200)
+              .attr('opacity',0.3)
+              .attr('stroke-width',function(d){
+                                   if (d.weight <= threshold){return 0}
+                                   else{return 2+link_width_scale*d.weight}})
+            };
+    
+    //function to show data box on hover in
+    function hover_in(name,targets,strength,locx,locy) {
+            // path hover animation
+            d3.selectAll("#"+name+"path")
+              .transition()
+              .duration(200)
+              .attr('opacity',1)
+              .attr('stroke-width',function(d){
+                                   targets.push(d.target.id);
+                                   strength.push(Math.round((d.weight + Number.EPSILON) * 100) / 100);
+                                   if (d.weight <= threshold){return 0}
+                                   else{return 2+(4+link_width_scale)*d.weight}})
+            
+            // show data box
+            var nodeInfo = [name];
+            for (let i = 0; i < targets.length; i++) {
+                nodeInfo.push("To "+targets[i]+": "+strength[i]) ;
+                };
+            var length = 5.2*longest_string(nodeInfo)
+            // hover text box
+            group.append("rect")
+               .attr("rx", 6)
+               .attr("ry", 6)
+               .attr('height',18*targets.length)
+               .attr('width',length)
+               .attr('id','stateRect')
+               .attr('fill','black')
+               .attr('opacity',0.5)
+               .attr('x',locx-length*0.5)
+               .attr('y',locy+22)
+
+            // hover text
+            group.selectAll('.stateshow')
+               .data(nodeInfo)
+               .enter()
+               .append("text")
+               .attr('class','stateshow')
+               .attr('font-size',10)
+               .attr('fill','white')
+               .attr('x',locx-length*0.45)
+               .attr('y',function(d,i){
+                return i*15+locy+36})
+               .attr('text-anchor','left')
+               .text(d=>d)
+            }
+    
+    // To compute longest string in the array for width of text box
+    function longest_string(str_ara) {
+                  let max = str_ara[0].length;
+                  str_ara.map(v => max = Math.max(max, v.length));
+                  var result = str_ara.filter(v => v.length == max)[0].length;
+                  return result;
+            }
+    // <NODES END> //   
+    
+    //setting initial zoom level (zoom to fit)
     function lapsedZoomFit() {
                var bounds = svg.node().getBBox(),
                    midX = bounds.x+bounds.width/2,
@@ -351,65 +460,96 @@ require(["d3"], function(d3) {
     
     // call zoom to fit upon initialisation
     lapsedZoomFit();
-
+    
+    // create a 'g' element for hovering elements
+    // positioned here to bring element to front
+    const group = svg.append("g");
+    
+    // <SLIDER EVENT> //
+    var sliderDataValue=0;
+    // initialise slider text
+    d3.select("output#dataIndexOutput").text("Data set index : " + 0);
+    d3.select("output#dataDateOutput").text("Data set date : " + date_list[0]);
+    
     // update chart when slider is moved
     d3.select("input[type=range]#dataSelect").on("input", function() {
-               var data;
-               data = this.value;
-               nodes = nodesData[data];
-               links = linksData[data];
-        
-               // compute positions if fresh data is selected
-               if (nodesData[data][0].x == undefined){
-                    const newSimulation = d3.forceSimulation(nodes,d=>d.id)
-                        .force("link", d3.forceLink().links(links,d=>d.id)
-                               .distance(d => link_distance-d.weight*150)
-                               .strength(function(d){
-                                            if (d.weight<=0){return 0} //strength adjusted to 0 for 0 probabilities
-                                            else{return 1}}))
-                        .force("charge", d3.forceManyBody().strength(link_charge))
-                        .force('collision', d3.forceCollide().radius(collision_scale * node_radius))
-                        .force("center", d3.forceCenter(width / 2, height / 2))
-                        .stop();
-    
-                    // allow simulation to run
-                    newSimulation.tick(%%ticks%%);                                    
-               };
-        
-               // update position of circles
-               var newCircle = node.selectAll('circle')
-                   .data(nodes, d=>d.id)
-                   .transition()
-                   .duration(800)
-                   .attr("cx", d => d.x)
-                   .attr("cy", d => d.y)
-            
-               // update position of texts
-               var newText = node.selectAll('text')
-                   .data(nodes, d => d.id)
-                   .transition()
-                   .duration(800)
-                   .attr("x", d => d.x)
-                   .attr("y", d => d.y)
-        
-               // update position of images
-               var newImage = node.selectAll(".images") //because unable to select 'svg:image'
-                   .data(nodes, d => d.id)
-                   .transition()
-                   .duration(800)
-                   .attr("x", d => d.x-10)
-                   .attr("y", d => d.y-10)
+               sliderDataValue = this.value;
+               nodes = nodesData[0];
+               links = linksData[sliderDataValue];
 
-               // update position of links
+               // update source and target of links
+               for (let i = 0; i < links.length; i++) {
+                  links[i].source = nodes[links[i].source];
+                  links[i].target = nodes[links[i].target];
+                }
+        
+               // update width of links
                var updateLink = d3.selectAll('.connections') //selectAll class doesnt work
                                .data(links,d=>d.id)
 
-               updateLink.attr('d',curvepath)
-                          .attr('d',shortenedpath)
-                          .attr('stroke-width',function(d){
-                                               if (d.weight <= 0){return 0}
-                                               else{return 2+link_width_scale*d.weight}});            
+               updateLink.transition()
+                         .duration(800)
+                         .attr('stroke-width',function(d){
+                                               if (d.weight <= threshold){return 0}
+                                               else{return 2+link_width_scale*d.weight}})
+               
+               // disable interactive events for 800 ms to prevent bugging out
+               if (nodes[0].image == null){
+                   rectangles.on('mouseover', null);
+                   rectangles.on('mouseout', null);
+               }else{
+                   image.on('mouseover', null);
+                   image.on('mouseout', null);}
+               path.on('mouseover', null);
+               path.on('mouseout', null);
         
+               setTimeout(function(){
+               if (nodes[0].image == null){
+                   rectangles.on('mouseover', motionInNode);
+                   rectangles.on('mouseout', motionOutNode);
+               }else{
+                   image.on('mouseover', motionInImage);
+                   image.on('mouseout', motionOutImage);
+                   }
+               path.on('mouseover', motionInLink);
+               path.on('mouseout', motionOutLink);
+               }, 800);
+                
                // update slider text
-               d3.select("output#dataOutput").text("data set selected : " + data);
+               d3.select("output#dataIndexOutput").text("Data set index : " + sliderDataValue);
+               d3.select("output#dataDateOutput").text("Data set date : " + date_list[sliderDataValue]);
     });
+    
+    // update chart when link pruning slider is moved
+    d3.select("input[type=range]#linkThreshold").on("input", function() {
+               threshold = this.value;
+        
+               // select all links
+               var updateLink = d3.selectAll('.connections') //selectAll class doesnt work
+                               .data(links,d=>d.id)
+               
+               // change link width to 0 if weight is below threshold
+               updateLink.transition()
+                         .duration(800)
+                         .attr('stroke-width',function(d){
+                                               if (d.weight <= threshold){return 0}
+                                               else{return 2+link_width_scale*d.weight}})
+        
+               //  update slidert text
+               d3.select("#dataDateOutput").text("Link Threshold : " + threshold);
+    });   
+    // <SLIDER EVENT END> //
+    
+    // <BUTTON EVENT> //
+    d3.select("#saveButton").on("click", function(){
+        // call function to save SVG as PNG
+        saveSvgAsPng.saveSvgAsPng(document.getElementById('SVG'),
+                                  'diagram_'+date_list[sliderDataValue]+'.png',
+                                  {backgroundColor: 'white',
+                                  encoderOptions:1});
+    })
+    // <BUTTON EVENT END> //
+    
+    // to inspect
+//     console.log(document.getElementById('SVG'));
+});
