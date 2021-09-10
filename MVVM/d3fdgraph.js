@@ -1,7 +1,7 @@
 // require is how jupyter manages javascript libraries
 require.config({
     paths: {
-        d3: 'https://d3js.org/d3.v6.min',
+        d3: 'https://d3js.org/d3.v6.min'
     }
 });
 
