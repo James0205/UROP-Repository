@@ -279,7 +279,7 @@ var script = document.createElement('script');
 
     if (nodes[0].image == null){
         // add images to nodes if given
-        var rectangles = node.append("rect")
+        const rectangles = node.append("rect")
             .attr("rx", 6)
             .attr("ry", 6)
             .attr('stroke','white')
@@ -288,11 +288,9 @@ var script = document.createElement('script');
             .attr('width',d=>5*d.id.length)
             .attr('fill',d=>colour(d.id))
             .attr('x',d=>d.x-(5*d.id.length)/2)
-            .attr('y',d=>d.y-7)
-            .on('mouseover', motionInNode)
-            .on('mouseout', motionOutNode);
+            .attr('y',d=>d.y-7);
         
-        const text = node.append("text")
+        var text = node.append("text")
             .attr('font-size',8)
             .attr("font-family","sans-serif")
             .attr('fill','white')
@@ -302,7 +300,9 @@ var script = document.createElement('script');
             .attr('text-anchor','middle')
             .attr("x", d => d.x)
             .attr("y", d => d.y)
-            .text(d => d.id);
+            .text(d => d.id)
+            .on('mouseover', motionInNode)
+            .on('mouseout', motionOutNode);
     }else{
         var image = node.append("svg:image") //set image on nodes if exist
             .attr('class','images')
@@ -501,8 +501,8 @@ var script = document.createElement('script');
                
                // disable interactive events for 800 ms to prevent bugging out
                if (nodes[0].image == null){
-                   rectangles.on('mouseover', null);
-                   rectangles.on('mouseout', null);
+                   text.on('mouseover', null);
+                   text.on('mouseout', null);
                }else{
                    image.on('mouseover', null);
                    image.on('mouseout', null);}
@@ -511,8 +511,8 @@ var script = document.createElement('script');
         
                setTimeout(function(){
                if (nodes[0].image == null){
-                   rectangles.on('mouseover', motionInNode);
-                   rectangles.on('mouseout', motionOutNode);
+                   text.on('mouseover', motionInNode);
+                   text.on('mouseout', motionOutNode);
                }else{
                    image.on('mouseover', motionInImage);
                    image.on('mouseout', motionOutImage);
