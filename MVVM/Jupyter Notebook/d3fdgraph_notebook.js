@@ -284,7 +284,7 @@ require(["d3"], function(d3) {
 
     if (nodes[0].image == null){
         // add images to nodes if given
-        var rectangles = node.append("rect")
+        const rectangles = node.append("rect")
                .attr("rx", 6)
                .attr("ry", 6)
                .attr('stroke','white')
@@ -293,11 +293,9 @@ require(["d3"], function(d3) {
                .attr('width',d=>5*d.id.length)
                .attr('fill',d=>colour(d.id))
                .attr('x',d=>d.x-(5*d.id.length)/2)
-               .attr('y',d=>d.y-7)
-               .on('mouseover', motionInNode)
-               .on('mouseout', motionOutNode);
+               .attr('y',d=>d.y-7);
         
-        const text = node.append("text")
+        var text = node.append("text")
             .attr('font-size',8)
             .attr("font-family","sans-serif")
             .attr('fill','white')
@@ -307,7 +305,9 @@ require(["d3"], function(d3) {
             .attr('text-anchor','middle')
             .attr("x", d => d.x)
             .attr("y", d => d.y)
-            .text(d => d.id);
+            .text(d => d.id)
+            .on('mouseover', motionInNode)
+            .on('mouseout', motionOutNode);
     }else{
         var image = node.append("svg:image") //set image on nodes if exist
             .attr('class','images')
@@ -506,8 +506,8 @@ require(["d3"], function(d3) {
                
                // disable interactive events for 800 ms to prevent bugging out
                if (nodes[0].image == null){
-                   rectangles.on('mouseover', null);
-                   rectangles.on('mouseout', null);
+                   text.on('mouseover', null);
+                   text.on('mouseout', null);
                }else{
                    image.on('mouseover', null);
                    image.on('mouseout', null);}
@@ -516,8 +516,8 @@ require(["d3"], function(d3) {
         
                setTimeout(function(){
                if (nodes[0].image == null){
-                   rectangles.on('mouseover', motionInNode);
-                   rectangles.on('mouseout', motionOutNode);
+                   text.on('mouseover', motionInNode);
+                   text.on('mouseout', motionOutNode);
                }else{
                    image.on('mouseover', motionInImage);
                    image.on('mouseout', motionOutImage);
@@ -547,50 +547,50 @@ require(["d3"], function(d3) {
                                                else{return 2+link_width_scale*d.weight}})
         
                //  update slidert text
-               d3.select("#dataDateOutput").text("Link Threshold : " + threshold);
+               d3.select("#linkThresholdOutput").text("Link Threshold : " + threshold);
     });   
     // <SLIDER EVENT END> //
 
     // <BUTTON EVENT> //
     d3.select("#saveButton").on("click", function(){
-      var html = d3.select("#SVG")
-        .attr("version", 1.1)
-        .attr("xmlns", "http://www.w3.org/2000/svg")
-        .node().parentNode.innerHTML;
+              var html = d3.select("#SVG")
+                        .attr("version", 1.1)
+                        .attr("xmlns", "http://www.w3.org/2000/svg")
+                        .node().parentNode.innerHTML;
+    
+              // console.log(html);
+              var imgsrc = 'data:image/svg+xml;base64,'+ btoa(html);
+              var img = '<img src="'+imgsrc+'">'; 
+                      d3.select("#svgdataurl").html(img);
 
-      // console.log(html);
-      var imgsrc = 'data:image/svg+xml;base64,'+ btoa(html);
-      var img = '<img src="'+imgsrc+'">'; 
-          d3.select("#svgdataurl").html(img);
+              var canvas = document.createElement("canvas"),
+                  context = canvas.getContext("2d");
 
-      var canvas = document.createElement("canvas"),
-          context = canvas.getContext("2d");
+              // default setting around 1.8, set to 7.2 for higher resolution
+              // const pixelRatio = window.devicePixelRatio || 1;
+              const pixelRatio = 7.2;
 
-      // default setting around 1.8, set to 7.2 for higher resolution
-      // const pixelRatio = window.devicePixelRatio || 1;
-      const pixelRatio = 7.2;
-
-          canvas.width = width * pixelRatio;
-          canvas.height = height * pixelRatio;
-          canvas.style.width = `${canvas.width}px`;
-          canvas.style.height = `${canvas.height}px`;
-          context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+                  canvas.width = width * pixelRatio;
+                  canvas.height = height * pixelRatio;
+                  canvas.style.width = `${canvas.width}px`;
+                  canvas.style.height = `${canvas.height}px`;
+                  context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
         
-      var image = new Image;
-          image.src = imgsrc;
-          image.onload = function() {
-          context.drawImage(image, 0, 0);
+              var image = new Image;
+                  image.src = imgsrc;
+                  image.onload = function() {
+                  context.drawImage(image, 0, 0);
 
-      var canvasdata = canvas.toDataURL("image/png",1.0);
+              var canvasdata = canvas.toDataURL("image/png",1.0);
 
-      var pngimg = '<img src="'+canvasdata+'">'; 
-          d3.select("#pngdataurl").html(pngimg);
+              var pngimg = '<img src="'+canvasdata+'">'; 
+                  d3.select("#pngdataurl").html(pngimg);
 
-      var a = document.createElement("a");
-          a.download = 'diagram_'+date_list[sliderDataValue]+'.png';
-          a.href = canvasdata;
-          a.click();
-      };
+              var a = document.createElement("a");
+                  a.download = 'diagram_'+date_list[sliderDataValue]+'.png';
+                  a.href = canvasdata;
+                  a.click();
+              };
     });
     // <BUTTON EVENT END> //
     
