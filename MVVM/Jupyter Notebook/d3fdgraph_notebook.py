@@ -38,7 +38,7 @@ def plot_force_directed_graph(data_set: list = None, state_name=None, image=None
     dataLength = len(data_set)
 
     # load html template file
-    html = Path('d3fdgraph.html').read_text().replace('%%unique-id%%', uid).replace('%%dataLength%%', str(dataLength-1))
+    html = Path('d3fdgraph_notebook.html').read_text().replace('%%unique-id%%', uid).replace('%%dataLength%%', str(dataLength-1))
 
     # convert graph nodes, links and list of dates to json, ready for d3
     json_nodes = json.dumps(nodesCalibration(data_set,state_name,image))
@@ -100,7 +100,7 @@ def create_d3_fdgraph(uid, config):
     Replaces keywords of Javascript and CSS files with
     given configuration values.
         """
-    js_code = Path('d3fdgraph.js').read_text()
+    js_code = Path('d3fdgraph_notebook.js').read_text()
     js_code = js_code.replace('%%unique-id%%', uid)
     for key, value in config.items():
         js_code = js_code.replace(f'%%{key}%%', str(value))
