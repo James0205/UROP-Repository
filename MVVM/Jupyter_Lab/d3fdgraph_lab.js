@@ -535,7 +535,7 @@ var script = document.createElement('script');
                                                else{return 2+link_width_scale*d.weight}})
         
                //  update slidert text
-               d3.select("#dataDateOutput").text("Link Threshold : " + threshold);
+               d3.select("#linkThresholdOutput").text("Link Threshold : " + threshold);
     });   
     // <SLIDER EVENT END> //
     
