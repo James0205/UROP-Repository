@@ -6,6 +6,8 @@ require.config({
 });
 
 // require(["d3","save-svg-as-png"], function(d3,saveSvgAsPng) {
+// require(["d3","file-saver"], function(d3,FileSaver) {
+
 require(["d3"], function(d3) {
 
 //     console.log(d3.version);
@@ -81,7 +83,7 @@ require(["d3"], function(d3) {
         }
                     
     // select HTML element and attach SVG to it
-    const svg = d3.select("#d3-container-%%unique-id%%")
+    var svg = d3.select("#d3-container-%%unique-id%%")
         .append("svg")
         .attr("width", width)
         .attr("height", height)
@@ -159,6 +161,7 @@ require(["d3"], function(d3) {
     var path = link.append("path")
                 .attr('class','connections')
                 .attr('id',d=>d.source.id+"path")
+                .attr('fill','none')
                 .attr('stroke-width',function(d){
                     if (d.weight <= threshold){return 0}
                     else{return 2+link_width_scale*d.weight}}) //set width to 0 if link has 0 probability
@@ -284,6 +287,8 @@ require(["d3"], function(d3) {
         var rectangles = node.append("rect")
                .attr("rx", 6)
                .attr("ry", 6)
+               .attr('stroke','white')
+               .attr('stroke-width',1)
                .attr('height',15)
                .attr('width',d=>5*d.id.length)
                .attr('fill',d=>colour(d.id))
@@ -293,6 +298,10 @@ require(["d3"], function(d3) {
                .on('mouseout', motionOutNode);
         
         const text = node.append("text")
+            .attr('font-size',8)
+            .attr("font-family","sans-serif")
+            .attr('fill','white')
+            .attr('stroke-width',0.6)
             .attr("dx", 0)
             .attr("dy", 3.5)
             .attr('text-anchor','middle')
@@ -541,15 +550,48 @@ require(["d3"], function(d3) {
                d3.select("#dataDateOutput").text("Link Threshold : " + threshold);
     });   
     // <SLIDER EVENT END> //
-    
+
     // <BUTTON EVENT> //
     d3.select("#saveButton").on("click", function(){
-        // call function to save SVG as PNG
-        saveSvgAsPng.saveSvgAsPng(document.getElementById('SVG'),
-                                  'diagram_'+date_list[sliderDataValue]+'.png',
-                                  {backgroundColor: 'white',
-                                  encoderOptions:1});
-    })
+      var html = d3.select("#SVG")
+        .attr("version", 1.1)
+        .attr("xmlns", "http://www.w3.org/2000/svg")
+        .node().parentNode.innerHTML;
+
+      // console.log(html);
+      var imgsrc = 'data:image/svg+xml;base64,'+ btoa(html);
+      var img = '<img src="'+imgsrc+'">'; 
+          d3.select("#svgdataurl").html(img);
+
+      var canvas = document.createElement("canvas"),
+          context = canvas.getContext("2d");
+
+      // default setting around 1.8, set to 7.2 for higher resolution
+      // const pixelRatio = window.devicePixelRatio || 1;
+      const pixelRatio = 7.2;
+
+          canvas.width = width * pixelRatio;
+          canvas.height = height * pixelRatio;
+          canvas.style.width = `${canvas.width}px`;
+          canvas.style.height = `${canvas.height}px`;
+          context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        
+      var image = new Image;
+          image.src = imgsrc;
+          image.onload = function() {
+          context.drawImage(image, 0, 0);
+
+      var canvasdata = canvas.toDataURL("image/png",1.0);
+
+      var pngimg = '<img src="'+canvasdata+'">'; 
+          d3.select("#pngdataurl").html(pngimg);
+
+      var a = document.createElement("a");
+          a.download = 'diagram_'+date_list[sliderDataValue]+'.png';
+          a.href = canvasdata;
+          a.click();
+      };
+    });
     // <BUTTON EVENT END> //
     
     // to inspect
