@@ -5,8 +5,10 @@ require.config({
     }
 });
 
-require(["d3",'save-svg-as-png'], function(d3,saveSvgAsPng) {
-    //console.log(d3.version);
+// require(["d3","save-svg-as-png"], function(d3,saveSvgAsPng) {
+require(["d3"], function(d3) {
+
+//     console.log(d3.version);
 
     // size of plot
     const width = %%width%%;
