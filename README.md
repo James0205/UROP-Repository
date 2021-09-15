@@ -18,3 +18,7 @@ Input Parameters
 4. Optional: Colour for Nodes
 5. Optional: Zoom Boolean (To enable or disable)
 6. Optional: Coordinates (Predefine node positions)
+
+Minor Data Analytics
+=========
+A notebook to compute similarity index of matrices has been included
